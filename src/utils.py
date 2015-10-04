@@ -110,36 +110,11 @@ contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
         server.connect('smtp.gmail.com','587')
         server.ehlo()
         server.starttls()
-        server.login(username,password)
+        server.login(username, EMAIL_PASSWORD)
         server.sendmail(sender, reciever, msg)
         server.quit()
     except socket.gaierror, e:
         print str(e) + "/n error raises when sending E-mails."
-
-def uploadToDropbox(inputfile, outputfile):
-    # Include the Dropbox SDK libraries
-    import dropbox as dbox
-    # Get your app key and secret from the Dropbox developer website
-    APP_KEY = 'rw5taat0dfl2ryf'
-    APP_SECRET = 'pxfb5itmmy7quyi'
-    
-    # ACCESS_TYPE should be 'dropbox' or 'app_folder' as configured for your app
-    ACCESS_TYPE = 'app_folder'
-    TOKENS = 'dropbox_token.ini'
-    token_file = open(current_path + '/' + TOKENS)
-    token_key,token_secret = token_file.read().split('|')
-    token_file.close()
-    
-    sess = dbox.session.DropboxSession(APP_KEY,APP_SECRET, ACCESS_TYPE )
-    sess.set_token(token_key,token_secret)
-    client = dbox.client.DropboxClient(sess)
-    
-    print "linked account:", client.account_info()
-    f = open(inputfile,'rb')
-    response = client.put_file(outputfile, f, True ) #put_file(full_path, file_obj, overwrite=False, parent_rev=None)    
-    print response
-    
-
 
 def getResponseObject(url):
     #headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0'}

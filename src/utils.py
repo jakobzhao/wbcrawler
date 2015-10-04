@@ -21,6 +21,7 @@ from shutil import copy
 import cookielib
 
 import mechanize
+from bs4 import BeautifulSoup
 
 from settings import *
 
@@ -67,14 +68,58 @@ def weibo_login():
     return(br)
 
 def parse_keyword(keyword, browser):
-    browser.open('http://s.weibo.com/weibo/'+keyword)
+    try:
+        browser.open('http://s.weibo.com/weibo/' + keyword)
+        print browser.response().geturl().decode('utf-8')
+    except:
+        pass
 
-    print browser.response().geturl().decode('utf-8')
-    t = browser.response().read()
-    f = open("html2.html","w")
-    f.write(t)
+    responseData = browser.response().read()
+    f = open("html4.html", "w")
+    f.write(responseData)
     f.close()
-    print "complete"
+
+    soup = BeautifulSoup(responseData, 'lxml')
+
+    # STK && STK.pageletM && STK.pageletM.view({"pid":"pl_weibo_direct","
+    tmp = soup.findAll("script")[20].get_text()
+    # html main content
+    tmp2 = json.loads(tmp[41:-1])['html']
+
+    soup2 = BeautifulSoup(tmp2, 'lxml')
+    posts = soup2.findAll('div', {'action-type': 'feed_list_item'})
+
+    # Currently, how many pages for this keyword in total
+    page = len(soup2.find('div', {'node-type': 'feed_list_page_morelist'}).findAll('li'))
+
+    for post in posts:
+        mid = post.attrs['mid']
+
+        username = post.find('a', class_='W_texta W_fb').attrs['title']
+        userid = post.find('a', class_='W_texta W_fb').attrs['href'][19:]
+
+        if post.find('a', class_='approve') == None:
+            user_verified = False
+        else:
+            user_verified = True
+
+        content = post.find('p', class_='comment_txt').get_text()
+        timestamp = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+
+        fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
+        cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
+        like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+
+        print username, " ", fwd_count, cmt_count, like_count, " ", content
+        pass
+
+
+    # f = open("a.txt","w")
+    # f.write(soup.get_text())
+    # f.close()
+    print "keyword parsed."
+
+
 
 
 def createDB(database, refresh):
@@ -117,8 +162,6 @@ contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
         print str(e) + "/n error raises when sending E-mails."
 
 def getResponseObject(url):
-    #headers = {'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0'}
-    headers = {'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
     request = urllib2.Request(url = url,headers = headers)
     content = "{}"
     msg = 'Something wrong with this crawler server.'

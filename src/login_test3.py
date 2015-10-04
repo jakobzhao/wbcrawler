@@ -1,8 +1,8 @@
 #*-* coding:utf-8 *-*
-import mechanize
 import cookielib
-import urllib
-import sys
+
+import mechanize
+
 br = mechanize.Browser()
 
 #cookie jar

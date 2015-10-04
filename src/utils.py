@@ -1,33 +1,29 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 10, 2012
+Created on Oct 4, 2015
 @author:       Bo Zhao
-@email:        Jakobzhao@gmail.com
+@email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
 @organization: The Ohio State University
 '''
-# retweet type
-# 1: reply
-# 2: comment
-# 3: reply to a comment
-# 4: a reply and a comment
 
 
-# status type
-# 0: original
-# 1: reply
-# 2: comments
 
-TOKEN = '2.00UjtoID_vpWMD6803c07a48xPUuYC'
-#TOKEN = '2.00UjtoID_vpWMD1961e78a7fdHoBSB' # jiumeng
-
-import urllib2,urllib,json
+import urllib2,urllib
+import json
 import sqlite3, time
 import sys, os
 
 import ssl, socket
+
 from shutil import copy
+
+import mechanize
+import cookielib
+
+from settings import *
+
 
 query_header_statuses  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, geo, thumbnail_pic, user_id, user_screen_name, reposts_count, comments_count) VALUES ( '
 query_header_comments  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, user_id, user_screen_name) VALUES ( '
@@ -35,11 +31,52 @@ query_header_users     = 'INSERT INTO users     (id, screen_name, province, city
 query_header_retweets  = 'INSERT INTO retweets  (id, retweet_type, from_status_id, from_status_user_id, from_status_user_screen_name, to_status_id, to_status_user_id,to_status_user_screen_name, created_at) VALUES ( '
 
 
-COUNT = 50
-COUNT2 = 100
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
+
+
+def weibo_login():
+
+    br = mechanize.Browser()
+    #cookie jar
+    cj = cookielib.LWPCookieJar()
+    br.set_cookiejar(cj)
+
+    #加上各种协议
+    br.set_handle_equiv(True)
+    #br.set_handle_gzip(True)
+    br.set_handle_redirect(True)
+    br.set_handle_referer(True)
+    br.set_handle_robots(False)
+
+    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+    #加上自己浏览器头部，和登陆了通行证的cookie
+    br.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36'),('Cookie',ck) ]
+
+    # for f in br.forms():
+    #     print f
+    # br.select_form(nr=0)
+    # print br
+    # br.form['username']='13580491531'
+    # br.form['password']='buhui1314iliting'
+    # br.submit()
+    # br.add_password('http://login.sina.com.cn/signup/signin.php?entry=sso','13580491531','buhui1314iliting')
+    #登陆新浪通行证
+    br.open('http://login.sina.com.cn/signup/signin.php?entry=sso')
+    return(br)
+
+def parse_keyword(keyword, browser):
+    browser.open('http://s.weibo.com/weibo/'+keyword)
+
+    print browser.response().geturl().decode('utf-8')
+    t = browser.response().read()
+    f = open("html2.html","w")
+    f.write(t)
+    f.close()
+    print "complete"
+
 
 def createDB(database, refresh):
     current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
@@ -53,7 +90,7 @@ def sendEmail(reciever, msg, attached_filename):
     import smtplib
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'
-    password = 'nanjing1212'
+    password = email_password
     msg = '''From: Crawler Server <snsgis@gmail.com>
 To: Administrator <''' + reciever + '''>
 Subject: Warning from Crawler Server

@@ -8,22 +8,21 @@ Created on Oct 4, 2015
 @organization: The Ohio State University
 '''
 
-
-
-import urllib2,urllib
+import urllib2
+import urllib
 import json
-import sqlite3, time
-import sys, os
-
-import ssl, socket
-
+import sqlite3
+import time
+import sys
+import os
+import ssl
+import socket
 from shutil import copy
-
-import mechanize
 import cookielib
 
-from settings import *
+import mechanize
 
+from settings import *
 
 query_header_statuses  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, geo, thumbnail_pic, user_id, user_screen_name, reposts_count, comments_count) VALUES ( '
 query_header_comments  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, user_id, user_screen_name) VALUES ( '
@@ -86,11 +85,12 @@ def createDB(database, refresh):
     else: 
         copy(current_path + '/' + 'weibo_crawler_template.db', database)
 
-def sendEmail(reciever, msg, attached_filename):
+
+def sendEmail(reciever, msg):
     import smtplib
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'
-    password = email_password
+
     msg = '''From: Crawler Server <snsgis@gmail.com>
 To: Administrator <''' + reciever + '''>
 Subject: Warning from Crawler Server

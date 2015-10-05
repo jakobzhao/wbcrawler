@@ -1,10 +1,12 @@
 # !/usr/bin/python  
 # -*- coding: utf-8 -*-
 
-import string, threading, time
+import threading
 import urllib
 import sqlite3
-import sys, os
+import sys
+import os
+
 
 #import ssl, socket
 from pyquery import PyQuery as pq
@@ -133,7 +135,7 @@ def main(num):
     conn.close()
     
     # 创建一个锁
-    mutex = threading.Lock()    
+    mutex = threading.Lock()
     # 先创建线程对象
     for x in xrange(0, num):
         threads.append(threading.Thread(target=add_harvestHouses, args=(database, x, ctable)))

@@ -17,11 +17,14 @@ import sys
 import os
 import ssl
 import socket
-from shutil import copy
 import cookielib
 
 import mechanize
+
+mechanize.__sockettimeout._GLOBAL_DEFAULT_TIMEOUT = 20
 from bs4 import BeautifulSoup
+
+from pymongo import MongoClient, errors
 
 from settings import *
 
@@ -51,7 +54,8 @@ def weibo_login():
     br.set_handle_referer(True)
     br.set_handle_robots(False)
 
-    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=2)
+    # br.set_proxies({"http": "165.139.179.225:8080"})
     #加上自己浏览器头部，和登陆了通行证的cookie
     br.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36'),('Cookie',ck) ]
 
@@ -67,68 +71,122 @@ def weibo_login():
     br.open('http://login.sina.com.cn/signup/signin.php?entry=sso')
     return(br)
 
-def parse_keyword(keyword, browser):
-    try:
-        browser.open('http://s.weibo.com/weibo/' + keyword)
-        print browser.response().geturl().decode('utf-8')
-    except:
-        pass
 
-    responseData = browser.response().read()
-    f = open("html4.html", "w")
-    f.write(responseData)
+def parse_keyword(keyword, browser, project):
+    client = MongoClient('localhost', 27017)
+    db = client[project]
+
+    browser.open('http://s.weibo.com/weibo/' + keyword)
+    time.sleep(0.5)
+    expected_url = browser.response().geturl().decode('utf-8')
+    print expected_url
+    # See the legal status of the account.
+    if expected_url != 'http://s.weibo.com/weibo/' + keyword:
+        print "Warming! this account is being banned. Try to switch to another one."
+        exit(-1)
+
+    rd = browser.response().get_data()
+    f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
+    f.write(rd)
     f.close()
 
-    soup = BeautifulSoup(responseData, 'lxml')
 
-    # STK && STK.pageletM && STK.pageletM.view({"pid":"pl_weibo_direct","
-    tmp = soup.findAll("script")[20].get_text()
-    # html main content
-    tmp2 = json.loads(tmp[41:-1])['html']
+    # html
+    # c = d[d.index('"pid":"pl_weibo_direct"') + 188: d.index('"pid":"pl_weibo_relation"')-65]
+    # json
 
-    soup2 = BeautifulSoup(tmp2, 'lxml')
-    posts = soup2.findAll('div', {'action-type': 'feed_list_item'})
+    c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
+    soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
+    posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
     # Currently, how many pages for this keyword in total
-    page = len(soup2.find('div', {'node-type': 'feed_list_page_morelist'}).findAll('li'))
+    page = 1
+    try:
+        page = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
+    except:
+        # 可缩短下次对同一个词搜索的时间间隙
+        print "the total page number was not acquired. Probably need to try again."
 
+    print "total pages = %d" % page
+    print "total posts = %d" % len(posts)
     for post in posts:
-        mid = post.attrs['mid']
+        try:
 
-        username = post.find('a', class_='W_texta W_fb').attrs['title']
-        userid = post.find('a', class_='W_texta W_fb').attrs['href'][19:]
+            mid = post.attrs['mid']
 
-        if post.find('a', class_='approve') == None:
-            user_verified = False
-        else:
-            user_verified = True
+            username = post.find('a', class_='W_texta W_fb').attrs['title']
+            userid = post.find('a', class_='W_texta W_fb').attrs['href'][19:]
 
-        content = post.find('p', class_='comment_txt').get_text()
-        timestamp = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+            if post.find('a', class_='approve') == None:
+                user_verified = False
+            else:
+                user_verified = True
 
-        fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
-        cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
-        like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+            content = post.find('p', class_='comment_txt').get_text()
+            t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
 
-        print username, " ", fwd_count, cmt_count, like_count, " ", content
-        pass
+            fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
+            cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
+            like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+            # t = '2015-10-05 08:51'   timestamp from weibo example
+            import datetime
+            from pytz import timezone
 
+            tzchina = timezone('Asia/Chongqing')
+            utc = timezone("UTC")
+            t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0,
+                                        tzinfo=tzchina)
+            t_utc = t_china.replace(tzinfo=tzchina).astimezone(utc)
+            post_return = db[toPinyin(keyword)].insert_one({
+                "keyword": keyword,
+                "mid": mid,
+                "content": content,
+                "timestamp": t_china,
+                "location": "",
+                "fwd_count": fwd_count,
+                "cmt_count": cmt_count,
+                "like_count": like_count,
+                "sentiment": 0,
+                "user": {
+                    "userid": userid,
+                    "username": username,
+                    "user_verified": user_verified,
+                    "location": "",
+                    "follower_count": 0,
+                    "friend_count": 0,
+                    "verified_info": "",
+                    "path": []
+                },
+                "comments": [],
+                "reply": []
 
-    # f = open("a.txt","w")
-    # f.write(soup.get_text())
-    # f.close()
+            })
+
+            user_return = db.users.insert_one({
+                "userid": userid,
+                "username": username,
+                "user_verified": user_verified
+            })
+
+            print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
+
+        except errors.DuplicateKeyError, e:
+            print e
+        except KeyError, e:
+            print e + "beautifulsoup does not working properly."
+
     print "keyword parsed."
 
 
+# hanzi to pinyin
+def toPinyin(keyword):
+    from pypinyin import lazy_pinyin
+    py = lazy_pinyin(unicode(keyword))
+    result = ''
+    for i in py:
+        result += i
+    return result
 
-
-def createDB(database, refresh):
-    current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
-    if os.path.exists(database):
-        if refresh:
-            copy(current_path + '/' + 'weibo_crawler_template.db', database)
-    else: 
-        copy(current_path + '/' + 'weibo_crawler_template.db', database)
 
 
 def sendEmail(reciever, msg):
@@ -162,7 +220,7 @@ contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
         print str(e) + "/n error raises when sending E-mails."
 
 def getResponseObject(url):
-    request = urllib2.Request(url = url,headers = headers)
+    request = urllib2.Request(url=url, headers=headers)
     content = "{}"
     msg = 'Something wrong with this crawler server.'
     #print url

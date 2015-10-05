@@ -13,12 +13,12 @@ from utils import parse_keyword, weibo_login
 
 
 #Variables
-keyword = '地方政府'
+keyword = '人生'
 
 pages = 1
 
 br = weibo_login()
-parse_keyword(keyword, br)
+parse_keyword(keyword, br, project="weibo")
 
 
 print "all finished"

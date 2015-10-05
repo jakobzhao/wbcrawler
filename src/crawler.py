@@ -10,8 +10,6 @@ Created on Oct 4, 2015
 
 
 from utils import parse_keyword, weibo_login
-import os,sys
-from shutil import copy
 
 
 #Variables

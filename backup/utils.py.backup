@@ -20,7 +20,9 @@ import socket
 import cookielib
 
 import mechanize
+
 from bs4 import BeautifulSoup
+
 from pymongo import MongoClient, errors
 
 from settings import *
@@ -51,7 +53,7 @@ def weibo_login():
     br.set_handle_referer(True)
     br.set_handle_robots(False)
 
-    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=2)
     # br.set_proxies({"http": "165.139.179.225:8080"})
     #加上自己浏览器头部，和登陆了通行证的cookie
     br.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36'),('Cookie',ck) ]
@@ -74,30 +76,25 @@ def parse_keyword(keyword, browser, project):
     db = client[project]
 
     try:
-        # rd = browser.open("http://weibo.cn/search/mblog?keyword=" + keyword, timeout=20)
-        rd = browser.open('http://s.weibo.com/weibo/' + keyword, timeout=20)
-        # time.sleep(2)
+        response = browser.open('http://s.weibo.com/weibo/' + keyword, timeout = 30).read()
     except urllib2.URLError, e:
-        print e.reason
         print e.message + " urlib2 error."
         exit(-1)
-    url_raw = urllib.unquote(rd.geturl())
-    print url_raw.decode("utf-8")
+    #expected_url = browser.response().geturl().decode('utf-8')
+    expected_url = "XX"
+    print expected_url
+    # See the legal status of the account.
+    #if expected_url != 'http://s.weibo.com/weibo/' + keyword:
+    #    print "Warming! this account is being banned. Try to switch to another one."
+    #    exit(-1)
 
-    # if "login.sina.com.cn/sso/login.php" in url_raw:
-    #     #time.sleep(4)
-    #     # http://login.sina.com.cn/sso/login.php?url=http%3A%2F%2Fs.weibo.com%2Fweibo%2F%E8%85%90%E8%B4%A5&_rand=1444204219.5002&gateway=1&service=weibo&entry=miniblog&useticket=1&returntype=META&_client_version=0.6.12
-    #     #rd = browser.open(url_raw, timeout=20)
-    #     #rd = browser.open(url_raw.decode("utf-8"), timeout=20)
-    #     rd = browser.open(url_raw[url_raw.index("url=") + 4:], timeout=20)
-    #     #rd = browser.open('http://s.weibo.com/weibo/' + keyword, timeout=30)
-    #     print rd.geturl().decode("utf-8") + " again"
+    try:
 
-    rd = rd.read()
-
-    print 'http://s.weibo.com/weibo/' + keyword.decode("utf-8")
-
-
+        #rd = browser.response().get_data()
+        rd = response
+    except socket.timeout,e:
+        print e.message
+        exit(-1)
     f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
     f.write(rd)
     f.close()
@@ -180,18 +177,13 @@ def parse_keyword(keyword, browser, project):
                 "user_verified": user_verified
             })
 
-            print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content.decode("utf-8",
-                                                                                                     "ignore").encode(
-                "gbk", "ignore")
+            print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content.decode("utf-8", "ignore").encode("gbk", "ignore")
 
         except errors.DuplicateKeyError, e:
-            # 如果这个程序只是负责加入新的数据，那么，（1）一旦发现duplicated，就停止，(或者把过去二十四小时内的搜索完毕)，要进行数据更新。（2）紧接着，转入基于时间的搜索，查看之前的页面，更新。
+            # Once finding out duplicates, stop
+            # 如果这个程序只是负责加入新的数据，那么，（1）一旦发现duplicated，就停止，(或者把过去二十四小时内的搜索完毕)。（2）紧接着，转入基于时间的搜索，查看之前的页面，更新。
             # 第一天的，可以从s.weibo.com入口更新，之后，可以只是抓取页面。或者说抓取页面一般从第二天开始。这样更好一些。发现哪些是高频的，低频的只需要做为数不多的次数。
             # 可见，针对回帖的搜索，之后一点会好。
-            #
-            #
-            # ======启动Update=====
-            # 先判断段数据的
             print e
 
         except KeyError, e:

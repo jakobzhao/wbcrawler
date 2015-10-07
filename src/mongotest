@@ -1,0 +1,42 @@
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
+'''
+Created on Oct 4, 2015
+@author:       Bo Zhao
+@email:        bo_zhao@hks.harvard.edu
+@website:      http://yenching.org
+@organization: Harvard Kennedy School
+'''
+
+from pymongo import MongoClient
+
+project = "weibo"
+keyword = "hahaha"
+
+client = MongoClient('localhost', 27017)
+db = client["weibo"]
+
+post_return = db[toPinyin(keyword)].insert_one({
+    "keyword": keyword,
+    "mid": mid,
+    "content": content,
+    "timestamp": t_china,
+    "location": "",
+    "fwd_count": fwd_count,
+    "cmt_count": cmt_count,
+    "like_count": like_count,
+    "sentiment": 0,
+    "user": {
+        "userid": userid,
+        "username": username,
+        "user_verified": user_verified,
+        "location": "",
+        "follower_count": 0,
+        "friend_count": 0,
+        "verified_info": "",
+        "path": []
+    },
+    "comments": [],
+    "reply": []
+
+})

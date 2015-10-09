@@ -18,16 +18,17 @@ start = datetime.datetime.now()
 project_name = "weibo"
 
 #Variables
-keyword = '雾霾'
+# keyword = '雾霾'
+# keyword = '地方政府'
+keyword = '气候变化'
 
 br = weibo_login()
-parse_keyword(keyword, br, project_name)
+parse_keyword(keyword, project_name, br)
 
 end = datetime.datetime.now()
 
-print "This program costs %d seconds." % (end - start).seconds
+print "Successfully completed.This program has costs %d seconds." % (end - start).seconds
 
-print "all finished"
 
 if __name__ == '__main__':
     pass

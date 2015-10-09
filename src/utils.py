@@ -24,13 +24,6 @@ from pytz import timezone
 
 from settings import *
 
-query_header_statuses  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, geo, thumbnail_pic, user_id, user_screen_name, reposts_count, comments_count) VALUES ( '
-query_header_comments  = 'INSERT INTO statuses  (id, status_type, text, created_at, source, user_id, user_screen_name) VALUES ( '
-query_header_users     = 'INSERT INTO users     (id, screen_name, province, city, location, description, url, profile_image_url, profile_url, domain, weihao, gender, created_at, geo_enabled, verified, avatar_large, verified_reason, lang, bi_followers_count, followers_count, friends_count, statuses_count, favourites_count) VALUES ( '
-query_header_retweets  = 'INSERT INTO retweets  (id, retweet_type, from_status_id, from_status_user_id, from_status_user_screen_name, to_status_id, to_status_user_id,to_status_user_screen_name, created_at) VALUES ( '
-
-
-
 reload(sys)
 sys.setdefaultencoding('utf-8')
 current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
@@ -428,3 +421,44 @@ def getOpinionLeadersByCentrality(num, database):
     centrality = nx.degree_centrality(G)
     sorted_centrality = sorted(centrality.items(), key=lambda centrality:centrality[1])[-1*num:]
     return sorted_centrality
+
+
+ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def base62_encode(num, alphabet=ALPHABET):
+    """Encode a number in Base X
+
+    `num`: The number to encode
+    `alphabet`: The alphabet to use for encoding
+    """
+    if (num == 0):
+        return alphabet[0]
+    arr = []
+    base = len(alphabet)
+    while num:
+        rem = num % base
+        num = num // base
+        arr.append(alphabet[rem])
+    arr.reverse()
+    return ''.join(arr)
+
+
+def base62_decode(string, alphabet=ALPHABET):
+    """Decode a Base X encoded string into the number
+
+    Arguments:
+    - `string`: The encoded string
+    - `alphabet`: The alphabet to use for encoding
+    """
+    base = len(alphabet)
+    strlen = len(string)
+    num = 0
+
+    idx = 0
+    for char in string:
+        power = (strlen - (idx + 1))
+        num += alphabet.index(char) * (base ** power)
+        idx += 1
+
+    return num

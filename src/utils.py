@@ -37,6 +37,41 @@ sys.setdefaultencoding('utf-8')
 current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
 
 
+def weibo_manual_login():
+    username = "vcjmi41976504@126.com"
+
+    password = "zx1987"
+
+    from selenium import webdriver
+    from selenium.webdriver.common.keys import Keys
+
+    chromedriver = "C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe"
+
+    os.environ["webdriver.chrome.driver"] = chromedriver
+    browser = webdriver.Chrome(chromedriver)
+
+    browser.get("http://weibo.com/login.php")
+
+    user = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[1]/div/input')
+    user.send_keys(username, Keys.ARROW_DOWN)
+
+    passwd = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[2]/div/input')
+    passwd.send_keys(password, Keys.ARROW_DOWN)
+
+    # //*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input
+    browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[6]').click()
+    vcode = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input')
+    if vcode:
+        code = raw_input("verify code:")
+        if code:
+            vcode.send_keys(code, Keys.ARROW_DOWN)
+
+    browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[6]').click()
+    print "login successfully."
+    browser.get("http://s.weibo.com/weibo/政府")
+    return browser
+
+
 def weibo_login():
 
     br = mechanize.Browser()
@@ -66,42 +101,59 @@ def weibo_login():
     # br.add_password('http://login.sina.com.cn/signup/signin.php?entry=sso','13580491531','buhui1314iliting')
     #登陆新浪通行证
     br.open('http://login.sina.com.cn/signup/signin.php?entry=sso')
+    # a = br.request.unredirected_hdrs['Cookie']
+    # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
+    # print a
     return(br)
 
 
+def get_response(browser, url, waiting):
+    rd = {}
+    while rd == {}:
+        time.sleep(waiting)
+        try:
+            # rd = browser.open("http://weibo.cn/search/mblog?keyword=" + keyword, timeout=20)
+            rd = browser.open(url, timeout=20)
+            # a = browser.request.unredirected_hdrs['Cookie']
+            # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
+            # print a
+            # rd = browser.open('http://s.weibo.com/weibo/%25E5%259C%25B0%25E6%2596%25B9%25E6%2594%25BF%25E5%25BA%259C&page=10' + keyword, timeout=20)
+            # time.sleep(2)
+            rd = rd.read()
+        except urllib2.URLError, e:
+            rd = {}
+            print e.reason + "urlib2 error."
+        except socket.timeout, e:
+            rd = {}
+            print e.message
+
+            # url_raw = urllib.unquote(rd.geturl())
+            # print url_raw.decode("utf-8", "ignore")
+
+            # if "login.sina.com.cn/sso/login.php" in url_raw:
+            #     #time.sleep(4)
+            #     # http://login.sina.com.cn/sso/login.php?url=http%3A%2F%2Fs.weibo.com%2Fweibo%2F%E8%85%90%E8%B4%A5&_rand=1444204219.5002&gateway=1&service=weibo&entry=miniblog&useticket=1&returntype=META&_client_version=0.6.12
+            #     #rd = browser.open(url_raw, timeout=20)
+            #     #rd = browser.open(url_raw.decode("utf-8"), timeout=20)
+            #     rd = browser.open(url_raw[url_raw.index("url=") + 4:], timeout=20)
+            #     #rd = browser.open('http://s.weibo.com/weibo/' + keyword, timeout=30)
+            #     print rd.geturl().decode("utf-8") + " again"
+    return rd
+
 def parse_keyword(keyword, browser, project):
+    import json
     client = MongoClient('localhost', 27017)
     db = client[project]
 
-    try:
-        # rd = browser.open("http://weibo.cn/search/mblog?keyword=" + keyword, timeout=20)
-        rd = browser.open('http://s.weibo.com/weibo/' + keyword, timeout=20)
-        # time.sleep(2)
-    except urllib2.URLError, e:
-        print e.reason
-        print e.message + " urlib2 error."
-        exit(-1)
-    url_raw = urllib.unquote(rd.geturl())
-    print url_raw.decode("utf-8")
+    url = 'http://s.weibo.com/weibo/' + keyword.decode("utf-8")
+    print url
 
-    # if "login.sina.com.cn/sso/login.php" in url_raw:
-    #     #time.sleep(4)
-    #     # http://login.sina.com.cn/sso/login.php?url=http%3A%2F%2Fs.weibo.com%2Fweibo%2F%E8%85%90%E8%B4%A5&_rand=1444204219.5002&gateway=1&service=weibo&entry=miniblog&useticket=1&returntype=META&_client_version=0.6.12
-    #     #rd = browser.open(url_raw, timeout=20)
-    #     #rd = browser.open(url_raw.decode("utf-8"), timeout=20)
-    #     rd = browser.open(url_raw[url_raw.index("url=") + 4:], timeout=20)
-    #     #rd = browser.open('http://s.weibo.com/weibo/' + keyword, timeout=30)
-    #     print rd.geturl().decode("utf-8") + " again"
+    rd = get_response(browser, url, WAITING_TIME)
 
-    rd = rd.read()
-
-    print 'http://s.weibo.com/weibo/' + keyword.decode("utf-8")
-
-
+    # 测评
     f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
     f.write(rd)
     f.close()
-
 
     # html
     # c = d[d.index('"pid":"pl_weibo_direct"') + 188: d.index('"pid":"pl_weibo_relation"')-65]
@@ -112,93 +164,111 @@ def parse_keyword(keyword, browser, project):
     posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
     # Currently, how many pages for this keyword in total
-    page = 1
+    pages = 1
     try:
-        page = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
+        pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
     except:
         # 可缩短下次对同一个词搜索的时间间隙
         print "the total page number was not acquired. Probably need to try again."
 
-    print "total pages = %d" % page
-    print "total posts = %d" % len(posts)
-    for post in posts:
-        try:
+    print "total pages = %d" % pages
 
-            mid = post.attrs['mid']
+    for i in range(pages):
+        url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)
+        print url.decode("utf-8")
+        rd = get_response(browser, url, WAITING_TIME)
+        # repeated code start
+        c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
+        soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
+        posts = soup.findAll('div', {'action-type': 'feed_list_item'})
+        # repeated code end
 
-            username = post.find('a', class_='W_texta W_fb').attrs['title']
-            userid = post.find('a', class_='W_texta W_fb').attrs['href'][19:]
+        print "total posts = %d" % len(posts)
+        for post in posts:
+            json_data = parse_post(post, keyword)
+            try:
+                post_return = db[toPinyin(keyword)].insert_one(json_data['post'])
+                user_return = db.users.insert_one(json_data['user'])
+            except errors.DuplicateKeyError, e:
+                #
+                # 如果这个程序只是负责加入新的数据，那么，（1）一旦发现duplicated，就停止，(或者把过去二十四小时内的搜索完毕)，要进行数据更新。（2）紧接着，转入基于时间的搜索，查看之前的页面，更新。
+                # 第一天的，可以从s.weibo.com入口更新，之后，可以只是抓取页面。或者说抓取页面一般从第二天开始。这样更好一些。发现哪些是高频的，低频的只需要做为数不多的次数。
+                # 可见，针对回帖的搜索，之后一点会好。
+                #
+                #
+                # ======启动Update=====
+                # 先判断段数据的
 
-            if post.find('a', class_='approve') == None:
-                user_verified = False
-            else:
-                user_verified = True
+                # 一旦有duplicated 就准备要停止，怎么停止？再做24小时。
+                #
+                print e.message
 
-            content = post.find('p', class_='comment_txt').get_text()
-            t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
-
-            fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
-            cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
-            like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
-            # t = '2015-10-05 08:51'   timestamp from weibo example
-            import datetime
-            from pytz import timezone
-
-            tzchina = timezone('Asia/Chongqing')
-            utc = timezone("UTC")
-            t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0,
-                                        tzinfo=tzchina)
-            t_utc = t_china.replace(tzinfo=tzchina).astimezone(utc)
-            post_return = db[toPinyin(keyword)].insert_one({
-                "keyword": keyword,
-                "mid": mid,
-                "content": content,
-                "timestamp": t_china,
-                "location": "",
-                "fwd_count": fwd_count,
-                "cmt_count": cmt_count,
-                "like_count": like_count,
-                "sentiment": 0,
-                "user": {
-                    "userid": userid,
-                    "username": username,
-                    "user_verified": user_verified,
-                    "location": "",
-                    "follower_count": 0,
-                    "friend_count": 0,
-                    "verified_info": "",
-                    "path": []
-                },
-                "comments": [],
-                "reply": []
-
-            })
-
-            user_return = db.users.insert_one({
-                "userid": userid,
-                "username": username,
-                "user_verified": user_verified
-            })
-
-            print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content.decode("utf-8",
-                                                                                                     "ignore").encode(
-                "gbk", "ignore")
-
-        except errors.DuplicateKeyError, e:
-            # 如果这个程序只是负责加入新的数据，那么，（1）一旦发现duplicated，就停止，(或者把过去二十四小时内的搜索完毕)，要进行数据更新。（2）紧接着，转入基于时间的搜索，查看之前的页面，更新。
-            # 第一天的，可以从s.weibo.com入口更新，之后，可以只是抓取页面。或者说抓取页面一般从第二天开始。这样更好一些。发现哪些是高频的，低频的只需要做为数不多的次数。
-            # 可见，针对回帖的搜索，之后一点会好。
-            #
-            #
-            # ======启动Update=====
-            # 先判断段数据的
-            print e
-
-        except KeyError, e:
-            print e.message + ". BeautifulSoup does not working properly."
+            except KeyError, e:
+                print e.message + ". BeautifulSoup does not working properly."
 
     print "keyword parsed."
 
+
+def parse_post(post, keyword):
+    mid = post.attrs['mid']
+
+    username = post.find('a', class_='W_texta W_fb').attrs['title']
+    userid = post.find('a', class_='W_texta W_fb').attrs['href'][19:]
+
+    if post.find('a', class_='approve') == None:
+        user_verified = False
+    else:
+        user_verified = True
+
+    content = post.find('p', class_='comment_txt').get_text()
+    t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+
+    fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
+    cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
+    like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+    # t = '2015-10-05 08:51'   timestamp from weibo example
+    import datetime
+    from pytz import timezone
+
+    tzchina = timezone('Asia/Chongqing')
+    utc = timezone("UTC")
+    t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0,
+                                tzinfo=tzchina)
+    t_utc = t_china.replace(tzinfo=tzchina).astimezone(utc)
+    result_json = {
+        "post": {
+            "keyword": keyword,
+            "mid": mid,
+            "content": content,
+            "timestamp": t_china,
+            "location": "",
+            "fwd_count": fwd_count,
+            "cmt_count": cmt_count,
+            "like_count": like_count,
+            "sentiment": 0,
+            "user": {
+                "userid": userid,
+                "username": username,
+                "user_verified": user_verified,
+                "location": "",
+                "follower_count": 0,
+                "friend_count": 0,
+                "verified_info": "",
+                "path": []
+            },
+            "comments": [],
+            "reply": []
+        },
+        "user": {
+            "userid": userid,
+            "username": username,
+            "user_verified": user_verified
+        }
+    }
+
+    print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content.decode("utf-8", "ignore").encode(
+        "gbk", "ignore")
+    return result_json
 
 # hanzi to pinyin
 def toPinyin(keyword):
@@ -242,7 +312,7 @@ contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
         print str(e) + "/n error raises when sending E-mails."
 
 def getResponseObject(url):
-    request = urllib2.Request(url=url, headers=headers)
+    request = urllib2.Request(url=url)
     content = "{}"
     msg = 'Something wrong with this crawler server.'
     #print url

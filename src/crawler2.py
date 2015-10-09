@@ -10,17 +10,22 @@ Created on Oct 4, 2015
 
 import datetime
 
-from utils import parse_keyword, weibo_login
+from utils import parse_keyword, weibo_manual_login
 
 start = datetime.datetime.now()
 
+
+
+
 # ProjectName
 project_name = "weibo"
+# Variables
+keyword = '奇怪'
 
-#Variables
-keyword = '雾霾'
+pages = 1
 
-br = weibo_login()
+br = weibo_manual_login()
+
 parse_keyword(keyword, br, project_name)
 
 end = datetime.datetime.now()

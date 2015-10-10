@@ -16,6 +16,7 @@ import os
 import socket
 import cookielib
 import datetime
+import json
 
 import mechanize
 from bs4 import BeautifulSoup
@@ -94,28 +95,41 @@ def weibo_login():
     # a = br.request.unredirected_hdrs['Cookie']
     # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
     # print a
-    return(br)
+    return br
 
 
 def get_response(browser, url, waiting):
     rd = {}
-    while rd == {}:
-        time.sleep(waiting)
+    import httplib
+    time.sleep(waiting)
+    i = 0
+    while rd == {} and i < 3:
+        i += 1
+        print "original url: %s" % url.decode("utf-8")
         try:
             # rd = browser.open("http://weibo.cn/search/mblog?keyword=" + keyword, timeout=20)
             rd = browser.open(url, timeout=20)
             # a = browser.request.unredirected_hdrs['Cookie']
             # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
             # print a
-            print rd.geturl().decode("utf-8")
+            final_url = rd.geturl().decode("utf-8")
+            print "final url: %s" % final_url
+            if "login" in final_url:
+                print "cookie temporarily expired."
+                exit(-1)
             rd = rd.read()
         except urllib2.URLError, e:
             rd = {}
-            print e.message
-            print "urlib2 error."
+            print e
+            print "urlib2 error. get_response."
         except socket.timeout, e:
             rd = {}
             print e.message
+            print "get_response"
+        except httplib.IncompleteRead, e:
+            rd = {}
+            print e.message
+            print "Incompleted read."
 
     return rd
 
@@ -209,7 +223,6 @@ def update_keyword(keyword, now):
 
 
 def parse_post(post, keyword):
-    import json
     mid = post.attrs['mid']
 
     username = post.find('a', class_='W_texta W_fb').attrs['title']
@@ -222,7 +235,7 @@ def parse_post(post, keyword):
 
     userid = userid_tmp[3:userid_tmp.index("&")]
 
-    if post.find('a', class_='approve') == None:
+    if post.find('a', class_='approve') is None:
         user_verified = False
     else:
         user_verified = True
@@ -298,12 +311,74 @@ def parse_post(post, keyword):
     return result_json
 
 
-def parse_location(project, keyword, browser):
-    # import json
+def parse_profile(project, keyword, browser):
     client = MongoClient('localhost', 27017)
     db = client[project]
     # STEP ONE：already got the latlng from the content
-    users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
+    # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
+    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [[0, 0, 0]]}]}).limit(100)
+    for user in users:
+        url = "http://weibo.cn/%s/info" % user['userid']
+        rd = get_response(browser, url, 20)
+        gender = ''
+        birthday = ''
+        verified = False
+        verified_info = ''
+        loc = ''
+        if rd != {}:
+            f = open("parse_profile_%s.html" % user['userid'], "w")
+            f.write(str(rd))
+            f.close()
+            tabs = BeautifulSoup(rd, 'html5lib').findAll("div", class_="c")
+            for tab in tabs:
+                info = tab.get_text()
+                if '昵称' in info:
+                    info = info.replace('认证信息：', '认信:')
+                    flds = info.split(":")
+                    i = 0
+                    while i < len(flds):
+                        if flds[i] == '性别':
+                            if flds[i + 1] == '男':
+                                gender = 'M'
+                            else:
+                                gender = 'F'
+                        if flds[i] == '地区':
+                            loc = flds[i + 1]
+                        if flds[i] == '认信':
+                            verified = True
+                            verified_info = flds[i + 1]
+                        if flds[i] == '生日':
+                            birthday = flds[i + 1]
+                        i += 1
+        # url = "http://www.weibo.com/u/%s" % user['userid']
+        # rd = get_response(browser, url, 20)
+        # if rd != {}:
+        #     # output for testing
+        #     f = open("parse_profile_%s.html" % user['userid'], "w")
+        #     f.write(str(rd))
+        #     f.close()
+        #
+        #     info = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_frame_b")
+        #     ind_counts_table = info.find("table", class_="tb_counter")
+        #     ind_counts = ind_counts_table.findAll("strong", class_="W_f18").get_text()
+        #     verified_info = info.find("p", class_="info").get_text()
+        #
+        #     loc_icon = info.find("em", class_=re.compile("place"))
+        #
+        #    print str(ind_counts), verified_info
+        else:
+            continue
+
+        print gender, birthday, verified_info, loc
+
+
+def parse_location(project, keyword, browser):
+
+    client = MongoClient('localhost', 27017)
+    db = client[project]
+    # STEP ONE：already got the latlng from the content
+    # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
+    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [[0, 0, 0]]}]}).limit(100)
     for user in users:
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
@@ -321,14 +396,20 @@ def parse_location(project, keyword, browser):
 
             for post in posts:
                 # '2013-12-6 18:14'
-                # t = post.find("a", class_="date").get_text().lstrip()
-                # print t.decode("utf-8")
-                # t1 = t.split("-")
-                # t2 = t1[2].split(" ")
-                # t3 = t2[1].split(":")
-                # tzchina = timezone('Asia/Chongqing')
-                # t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
-                #                             tzinfo=tzchina)
+                t = post.find("a", class_="date").get_text().lstrip()
+                tzchina = timezone('Asia/Chongqing')
+                if "-" in t:
+                    t1 = t.split("-")
+                    t2 = t1[2].split(" ")
+                    t3 = t2[1].split(":")
+                    t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
+                                                tzinfo=tzchina)
+                else:
+                    t1 = t.split("æœˆ")[0]
+                    t2 = t.split("æœˆ")[1].split("æ—¥")[0]
+                    t3 = t.split(" ")[1].split(":")
+                    t_china = datetime.datetime(2015, int(t1), int(t2), int(t3[0]), int(t3[1]), 0, 0, tzinfo=tzchina)
+
                 # path
                 if post.find("div", class_="time_map_pao2") is not None:
                     ll = post.find("div", class_="time_map_pao2")
@@ -338,22 +419,38 @@ def parse_location(project, keyword, browser):
                     tmp = tmp.split(",")
                     lng = tmp[1]
                     lat = tmp[0]
-                    path.append([lat, lng])
                 elif post.find("div", class_="time_mapsite") is not None:
                     ll = post.find("div", class_="time_mapsite")
                     tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
                     tmp = tmp.split(",")
                     lat = tmp[1]
                     lng = tmp[0].split("(")[1]
+                elif post.find("div", class_="time_mapsite2") is not None:
+                    ll = post.find("div", class_="time_mapsite2")
+                    tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
+                    tmp = tmp.split(",")
+                    lat = tmp[1]
+                    lng = tmp[0].split("(")[1]
                 else:
-                    pass
+                    lat = 0
+                    lng = 0
 
-                print lng, lat
+                path.append([float(lat), float(lng), t_china])
+                print lat, lng, t_china
         else:
             # 提取path
-            path.append([0, 0])
+            path.append([0, 0, 0])
         db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
+        # 更新user 的latlng,
+        # 对于post的latlng的更新，我认为可以不着急？
+        latlng = [path[0][0], path[0][1]]  # 临时策略
+        db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+        #最后一个是对于本身帖子没有位置，path也没有的。
 
+        # 针对一人多贴的情况，对个人的扫描。地址重要，所以扫了，然后每一个人的主页？？验证类型。其实可以不要。
+
+
+        #所以，只去找回帖，report就好？
     pass
 
 # hanzi to pinyin
@@ -364,7 +461,6 @@ def toPinyin(keyword):
     for i in py:
         result += i
     return result
-
 
 def sendEmail(reciever, msg):
     import smtplib

@@ -20,7 +20,7 @@ project_name = "weibo"
 #Variables
 # keyword = '雾霾'
 # keyword = '地方政府'
-keyword = '气候变化'
+keyword = '乡政府'
 
 br = weibo_login()
 parse_keyword(keyword, project_name, br)

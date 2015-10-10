@@ -107,13 +107,9 @@ def get_response(browser, url, waiting):
         i += 1
         print "original url: %s" % url.decode("utf-8")
         try:
-            # rd = browser.open("http://weibo.cn/search/mblog?keyword=" + keyword, timeout=20)
             rd = browser.open(url, timeout=20)
-            # a = browser.request.unredirected_hdrs['Cookie']
-            # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
-            # print a
             final_url = rd.geturl().decode("utf-8")
-            print "final url: %s" % final_url
+            # print "final url: %s" % final_url
             if "login" in final_url:
                 print "cookie temporarily expired."
                 exit(-1)
@@ -130,9 +126,7 @@ def get_response(browser, url, waiting):
             rd = {}
             print e.message
             print "Incompleted read."
-
     return rd
-
 
 def parse_keyword(keyword, project, browser):
     import json
@@ -248,19 +242,11 @@ def parse_post(post, keyword):
     like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
 
     # location
-    lat, lng, loc = 0, 0, ""
+    loc = ""
     if post.find('span', class_='W_btn_tag') is not None:
         if post.find('span', class_='W_btn_tag').attrs.has_key('title'):
             loc = post.find('span', class_='W_btn_tag').attrs['title']
-            url = 'http://api.map.baidu.com/geocoder/v2/?address=%s&output=json&ak=%s' % (loc, BAIDU_AK)
-            print loc
-            response = urllib2.urlopen(url)
-            try:
-                loc_json = json.loads(response.read())
-                lat = loc_json[u'result'][u'location'][u'lat']
-                lng = loc_json[u'result'][u'location'][u'lng']
-            except ValueError, e:
-                print e.message + "No JSON object could be decoded"
+            latlng = geocode(loc)
 
     # t = '2015-10-05 08:51'   timestamp from weibo example
     tzchina = timezone('Asia/Chongqing')
@@ -278,7 +264,7 @@ def parse_post(post, keyword):
             "cmt_count": cmt_count,
             "like_count": like_count,
             "location": loc,
-            "latlng": [lat, lng],
+            "latlng": latlng,
             "sentiment": 0,
             "user": {
                 "userid": userid,
@@ -296,9 +282,12 @@ def parse_post(post, keyword):
         "user": {
             "userid": userid,
             "username": username,
-            "user_verified": user_verified,
+            "verified": user_verified,
+            "verified_info": '',
+            "gender": "",
+            "birthday": 1900,
             "location": loc,
-            "latlng": [lat, lng],
+            "latlng": latlng,
             "follower_count": 0,
             "friend_count": 0,
             "verified_info": "",
@@ -321,7 +310,7 @@ def parse_profile(project, keyword, browser):
         url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response(browser, url, 20)
         gender = ''
-        birthday = ''
+        birthday = 1900
         verified = False
         verified_info = ''
         loc = ''
@@ -336,41 +325,54 @@ def parse_profile(project, keyword, browser):
                     info = info.replace('认证信息：', '认信:')
                     flds = info.split(":")
                     i = 0
-                    while i < len(flds):
-                        if flds[i] == '性别':
-                            if flds[i + 1] == '男':
+                    while i < len(flds) - 1:
+                        if '性别' in flds[i]:
+                            if '男' in flds[i + 1]:
                                 gender = 'M'
                             else:
                                 gender = 'F'
-                        if flds[i] == '地区':
-                            loc = flds[i + 1]
-                        if flds[i] == '认信':
+                                # print gender
+                        if '地区' in flds[i]:
+                            loc = flds[i + 1][:-2]
+                            # print loc
+                        if '认信' in flds[i]:
                             verified = True
-                            verified_info = flds[i + 1]
-                        if flds[i] == '生日':
-                            birthday = flds[i + 1]
+                            verified_info = flds[i + 1][:-2]
+                            # print verified_info
+                        if '生日' in flds[i]:
+                            birthday = flds[i + 1][:-2]
+                            # print birthday
                         i += 1
-        # url = "http://www.weibo.com/u/%s" % user['userid']
-        # rd = get_response(browser, url, 20)
-        # if rd != {}:
-        #     # output for testing
-        #     f = open("parse_profile_%s.html" % user['userid'], "w")
-        #     f.write(str(rd))
-        #     f.close()
-        #
-        #     info = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_frame_b")
-        #     ind_counts_table = info.find("table", class_="tb_counter")
-        #     ind_counts = ind_counts_table.findAll("strong", class_="W_f18").get_text()
-        #     verified_info = info.find("p", class_="info").get_text()
-        #
-        #     loc_icon = info.find("em", class_=re.compile("place"))
-        #
-        #    print str(ind_counts), verified_info
+                    if '地区' not in info:
+                        loc = "none"
         else:
             continue
 
-        print gender, birthday, verified_info, loc
+        print loc
 
+        latlng = geocode(loc)
+        db.users.update({'userid': user['userid']}, {'$set': {
+            'gender': gender,
+            'birthday': birthday,
+            'loc': loc,
+            'verified': verified,
+            'verified_info': verified_info,
+            'latlng': latlng
+        }})
+        print "%s %s %r %s %s %f %f" % (gender, birthday, verified, verified_info, loc, latlng[0], latlng[1])
+
+
+def geocode(loc):
+    lat, lng = 0, 0
+    url = 'http://api.map.baidu.com/geocoder/v2/?address=%s&output=json&ak=%s' % (loc, BAIDU_AK)
+    response = urllib2.urlopen(url)
+    try:
+        loc_json = json.loads(response.read())
+        lat = loc_json[u'result'][u'location'][u'lat']
+        lng = loc_json[u'result'][u'location'][u'lng']
+    except ValueError, e:
+        print e.message + "No JSON object could be decoded"
+    return [lat, lng]
 
 def parse_location(project, keyword, browser):
 

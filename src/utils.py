@@ -306,8 +306,8 @@ def parse_location(project, keyword, browser):
     users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
     for user in users:
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
-        url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s" % user['userid']
-        print url
+        url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
+        # print url
         rd = get_response(browser, url, WAITING_TIME)
         # output for testing
         f = open("parse_location_%s.html" % user['userid'], "w")
@@ -317,31 +317,41 @@ def parse_location(project, keyword, browser):
         path = []
         if "noUserFeed" not in rd:
             # STEP TWO: Assigning location the path api
-            posts = BeautifulSoup(rd, 'lxml').findAll("div", class_="time_feed_box")
+            posts = BeautifulSoup(rd, 'html5lib').findAll("div", class_="time_feed_box")
 
             for post in posts:
                 # '2013-12-6 18:14'
-                t = post.find("a", class_="date").get_text().lstrip()
-                print t.decode("utf-8")
-                t1 = t.split("-")
-                t2 = t1[2].split(" ")
-                t3 = t2[1].split(":")
-                tzchina = timezone('Asia/Chongqing')
-                t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
-                                            tzinfo=tzchina)
+                # t = post.find("a", class_="date").get_text().lstrip()
+                # print t.decode("utf-8")
+                # t1 = t.split("-")
+                # t2 = t1[2].split(" ")
+                # t3 = t2[1].split(":")
+                # tzchina = timezone('Asia/Chongqing')
+                # t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
+                #                             tzinfo=tzchina)
                 # path
-                ll = post.find("div", class_="time_map_pao2")
-                print ll
-                tmp = ll.find("a", {'target': '_blank'}).attrs['href']
-                tmp = tmp.split('/')[2]
-                tmp = tmp.split(",")
-                lng = tmp[1]
-                lat = tmp[0]
-                path.append([lat, lng, t_china])
-                print lng, lat, t_china
+                if post.find("div", class_="time_map_pao2") is not None:
+                    ll = post.find("div", class_="time_map_pao2")
+                    # if ll.find("a", {'target': '_blank'}).attrs['href'] is not None:
+                    tmp = ll.find("a", {'target': '_blank'}).attrs['href']
+                    tmp = tmp.split('/')[2]
+                    tmp = tmp.split(",")
+                    lng = tmp[1]
+                    lat = tmp[0]
+                    path.append([lat, lng])
+                elif post.find("div", class_="time_mapsite") is not None:
+                    ll = post.find("div", class_="time_mapsite")
+                    tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
+                    tmp = tmp.split(",")
+                    lat = tmp[1]
+                    lng = tmp[0].split("(")[1]
+                else:
+                    pass
+
+                print lng, lat
         else:
             # 提取path
-            path.append([0, 0, 0])
+            path.append([0, 0])
         db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
 
     pass

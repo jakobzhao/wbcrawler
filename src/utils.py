@@ -194,6 +194,11 @@ def parse_keyword(keyword, project, browser):
         c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
         soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
         posts = soup.findAll('div', {'action-type': 'feed_list_item'})
+
+        f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
+        f.write(rd)
+        f.close()
+
         # repeated code end
 
         print "total posts = %d" % len(posts)

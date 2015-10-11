@@ -25,6 +25,8 @@ from pytz import timezone
 
 from settings import *
 
+ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
@@ -60,7 +62,6 @@ def weibo_manual_login():
 
     browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[6]').click()
     print "login successfully."
-    browser.get("http://s.weibo.com/weibo/政府")
     return browser
 
 def weibo_login():
@@ -109,8 +110,30 @@ def get_response(browser, url, waiting):
         try:
             rd = browser.open(url, timeout=20)
             final_url = rd.geturl().decode("utf-8")
-            # print "final url: %s" % final_url
-            if "login" in final_url:
+            print "final url: %s" % final_url
+            if "login.weibo.cn/login" in final_url:
+                f = open("1.html", "w")
+                f.write(rd.read())
+                f.close()
+                print "mechanize cannot be used."
+                exit(-1)
+                # browser.click_link(name='submit')
+                # #exit(-1)
+                # #     for form in browser.forms():
+                # #         print form.action
+                # #         print form
+                # #     #browser.select_form(nr=0)
+                # browser.forms()[0]["mobile"] = "vcjmi41976504@126.com"
+                # browser.forms()[0]["password"] = "zx1987"
+                # browser.forms()[0].submit()
+                # rd = browser.open(url, timeout=20)
+                # f = open("2.html", "w")
+                # f.write(rd.read())
+                # f.close()
+                # print final_url
+                # print "needs to login"
+            if "login.sina.com.cn" in final_url:
+                print final_url
                 print "cookie temporarily expired."
                 exit(-1)
             rd = rd.read()
@@ -129,13 +152,16 @@ def get_response(browser, url, waiting):
     return rd
 
 def parse_keyword(keyword, project, browser):
-    import json
+    import urllib
     client = MongoClient('localhost', 27017)
     db = client[project]
 
     # http://s.weibo.com/weibo/%25E7%2588%25B1%25E6%2583%2585&page=9
     # nodup=1 real time
-    url = 'http://s.weibo.com/weibo/' + keyword.decode("utf-8")
+    query = urllib.quote(keyword)
+    query = query.replace('%', '%25')
+
+    url = 'http://s.weibo.com/weibo/' + query + '&nodup=1'
     # print url
 
     rd = get_response(browser, url, WAITING_TIME)
@@ -161,7 +187,7 @@ def parse_keyword(keyword, project, browser):
     stop_flag = False
 
     for i in range(pages):
-        url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)
+        url = 'http://s.weibo.com/weibo/' + query + '&page=' + str(i + 1) + '&nodup=1'
         print url.decode("utf-8")
         rd = get_response(browser, url, WAITING_TIME)
         # repeated code start
@@ -222,12 +248,18 @@ def parse_post(post, keyword):
     username = post.find('a', class_='W_texta W_fb').attrs['title']
     print username
     try:
-        userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
+        if "usercard" in post.find('a', class_='W_texta W_fb').attrs.keys():
+            userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
+            userid = userid_tmp[3:userid_tmp.index("&")]
+        elif "usercard" in post.find('img', class_='W_face_radius').attrs.keys():
+            userid_tmp = post.find('img', class_='W_face_radius').attrs['usercard']
+            userid = userid_tmp[3:userid_tmp.index("&")]
+            userid = userid_tmp[3:userid_tmp.index("&")]
+        else:
+            userid_tmp = post.find('img', class_='W_face_radius').attrs['src']
+            userid = userid_tmp.split("/")[3]
     except KeyError, e:
         print e.message
-        userid_tmp = post.find('img', class_='W_face_radius').attrs['usercard']
-
-    userid = userid_tmp[3:userid_tmp.index("&")]
 
     if post.find('a', class_='approve') is None:
         user_verified = False
@@ -235,14 +267,26 @@ def parse_post(post, keyword):
         user_verified = True
 
     content = post.find('p', class_='comment_txt').get_text()
-    t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
-
-    fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
-    cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
-    like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
-
+    if len(post.findAll('a', {'node-type': 'feed_list_item_date'})) == 2:
+        t = post.findAll('a', {'node-type': 'feed_list_item_date'})[1].attrs['title']
+    else:
+        t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+    if post.find('a', {'action-type': 'feed_list_forward'}) is not None:
+        fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
+        cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
+        like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+    else:
+        lis_panel = post.find("ul", class_="feed_action_info feed_action_row4")
+        lis = lis_panel.findAll("li")
+        for li in lis:
+            if "转发" in li.get_text():
+                fwd_count = int("0" + li.get_text().replace("转发", ""))
+            if "评论" in li.get_text():
+                cmt_count = int("0" + li.get_text().replace("评论", ""))
+            like_count = int("0" + lis[len(lis) - 1].get_text())
     # location
     loc = ""
+    latlng = [0, 0]
     if post.find('span', class_='W_btn_tag') is not None:
         if post.find('span', class_='W_btn_tag').attrs.has_key('title'):
             loc = post.find('span', class_='W_btn_tag').attrs['title']
@@ -257,8 +301,8 @@ def parse_post(post, keyword):
     result_json = {
         "post": {
             "keyword": keyword,
-            "mid": mid,
-            "content": content,
+            "mid": int(mid),
+            "content": content.encode('utf-8', 'ignore'),
             "timestamp": t_china,
             "fwd_count": fwd_count,
             "cmt_count": cmt_count,
@@ -267,8 +311,8 @@ def parse_post(post, keyword):
             "latlng": latlng,
             "sentiment": 0,
             "user": {
-                "userid": userid,
-                "username": username,
+                "userid": int(userid),
+                "username": username.encode('utf-8', 'ignore'),
                 "user_verified": user_verified,
                 "location": "",
                 "follower_count": 0,
@@ -280,7 +324,7 @@ def parse_post(post, keyword):
             "reply": []
         },
         "user": {
-            "userid": userid,
+            "userid": int(userid),
             "username": username,
             "verified": user_verified,
             "verified_info": '',
@@ -294,19 +338,52 @@ def parse_post(post, keyword):
             "path": []
         }
     }
+    try:
+        print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
+    except UnicodeEncodeError, e:
+        print e.message
 
-    print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content.decode("utf-8", "ignore").encode(
-        "gbk", "ignore")
     return result_json
 
 
-def parse_profile(project, keyword, browser):
+def parse_repost(project, keyword, browser):
+    client = MongoClient('localhost', 27017)
+    db = client[project]
+    # 目前只计算转贴大于十次的
+    posts = db[toPinyin(keyword)].find({"fwd_count": {"$gt": 10}}).limit(100)
+    for post in posts:
+        token = mid_to_token(post['mid'])
+        # http://weibo.com/3693685493/CEtFjkHwM?type=repost
+        try:
+            url = "http://weibo.com/%s/%s?type=repost" % (str(post['user']['userid']), token)
+            print url
+            rd = get_response(browser, url, 20)
+
+            f = open("parse_repost_%s.html" % post['mid'], "w")
+            f.write(str(rd))
+            f.close()
+            repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+
+            counts_tmp = repost_panel.find("div", class_="WB_handle")
+
+            # action-type fl_forward
+            counts = counts_tmp.findAll("li")
+
+            page_tmp = repost_panel.findAll("a", class_="page S_txt1")
+            print "3213"
+        except KeyError, e:
+            e.message
+
+
+def parse_profile_2(project, keyword, browser):
     client = MongoClient('localhost', 27017)
     db = client[project]
     # STEP ONE：already got the latlng from the content
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [[0, 0, 0]]}]}).limit(100)
+    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(100)
     for user in users:
+        # user['userid'] = 5196716097
+        # url = "http://www.weibo.com/%s/info" % user['userid']
         url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response(browser, url, 20)
         gender = ''
@@ -314,6 +391,30 @@ def parse_profile(project, keyword, browser):
         verified = False
         verified_info = ''
         loc = ''
+        latlng = [0, 0]
+        if rd != {}:
+            f = open("parse_profile_%s.html" % user['userid'], "w")
+            f.write(str(rd))
+            f.close()
+        else:
+            continue
+
+def parse_profile(project, keyword, browser):
+    client = MongoClient('localhost', 27017)
+    db = client[project]
+    # STEP ONE：already got the latlng from the content
+    # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
+    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(100)
+    for user in users:
+        # user['userid'] = 5196716097
+        url = "http://weibo.cn/%s/info?rl=100" % user['userid']
+        rd = get_response(browser, url, 20)
+        gender = ''
+        birthday = 1900
+        verified = False
+        verified_info = ''
+        loc = ''
+        latlng = [0, 0]
         if rd != {}:
             f = open("parse_profile_%s.html" % user['userid'], "w")
             f.write(str(rd))
@@ -322,7 +423,7 @@ def parse_profile(project, keyword, browser):
             for tab in tabs:
                 info = tab.get_text()
                 if '昵称' in info:
-                    info = info.replace('认证信息：', '认信:')
+                    info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
                     flds = info.split(":")
                     i = 0
                     while i < len(flds) - 1:
@@ -338,40 +439,58 @@ def parse_profile(project, keyword, browser):
                         if '认信' in flds[i]:
                             verified = True
                             verified_info = flds[i + 1][:-2]
+                            verified_info = verified_info.replace('官方微博', '')
                             # print verified_info
                         if '生日' in flds[i]:
                             birthday = flds[i + 1][:-2]
                             # print birthday
                         i += 1
+
+                    if '地区' in flds[len(flds) - 2]:
+                        loc = flds[len(flds) - 1]
+                        print loc
+
                     if '地区' not in info:
                         loc = "none"
+                    elif loc == "其他":
+                        pass
+                    else:
+                        latlng = geocode(loc)
+                    break
         else:
             continue
 
-        print loc
+        try:
+            loc = loc.replace("海外 ", "")
+            db.users.update({'userid': user['userid']}, {'$set': {
+                'gender': unicode(gender),
+                'birthday': birthday,
+                'loc': loc,
+                'verified': verified,
+                'verified_info': verified_info,
+                'latlng': latlng
+            }})
 
-        latlng = geocode(loc)
-        db.users.update({'userid': user['userid']}, {'$set': {
-            'gender': gender,
-            'birthday': birthday,
-            'loc': loc,
-            'verified': verified,
-            'verified_info': verified_info,
-            'latlng': latlng
-        }})
-        print "%s %s %r %s %s %f %f" % (gender, birthday, verified, verified_info, loc, latlng[0], latlng[1])
+        except:
+            print "error"
+        # print unicode(gender), birthday, verified_info, loc, latlng[0], latlng[1]
+        print loc, latlng[0], latlng[1]
 
 
 def geocode(loc):
     lat, lng = 0, 0
     url = 'http://api.map.baidu.com/geocoder/v2/?address=%s&output=json&ak=%s' % (loc, BAIDU_AK)
-    response = urllib2.urlopen(url)
+    response = urllib2.urlopen(url.replace(' ', '%20'))
     try:
         loc_json = json.loads(response.read())
         lat = loc_json[u'result'][u'location'][u'lat']
         lng = loc_json[u'result'][u'location'][u'lng']
     except ValueError, e:
+        print url
         print e.message + "No JSON object could be decoded"
+    except KeyError, e:
+        print url
+        print e.message
     return [lat, lng]
 
 def parse_location(project, keyword, browser):
@@ -379,8 +498,7 @@ def parse_location(project, keyword, browser):
     client = MongoClient('localhost', 27017)
     db = client[project]
     # STEP ONE：already got the latlng from the content
-    # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [[0, 0, 0]]}]}).limit(100)
+    users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(100)
     for user in users:
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
@@ -448,6 +566,7 @@ def parse_location(project, keyword, browser):
         latlng = [path[0][0], path[0][1]]  # 临时策略
         db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
         #最后一个是对于本身帖子没有位置，path也没有的。
+        #parse_profile() 可以找到位置
 
         # 针对一人多贴的情况，对个人的扫描。地址重要，所以扫了，然后每一个人的主页？？验证类型。其实可以不要。
 
@@ -545,8 +664,6 @@ def getOpinionLeadersByCentrality(num, database):
     sorted_centrality = sorted(centrality.items(), key=lambda centrality:centrality[1])[-1*num:]
     return sorted_centrality
 
-
-ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 def base62_encode(num, alphabet=ALPHABET):
     """Encode a number in Base X
 
@@ -583,3 +700,18 @@ def base62_decode(string, alphabet=ALPHABET):
         idx += 1
 
     return num
+
+
+def mid_to_token(midint):
+    midint = str(midint)[::-1]
+    size = len(midint) / 7 if len(midint) % 7 == 0 else len(midint) / 7 + 1
+    result = []
+    for i in range(size):
+        s = midint[i * 7: (i + 1) * 7][::-1]
+        s = base62_encode(int(s))
+        s_len = len(s)
+        if i < size - 1 and len(s) < 4:
+            s = '0' * (4 - s_len) + s
+        result.append(s)
+    result.reverse()
+    return ''.join(result)

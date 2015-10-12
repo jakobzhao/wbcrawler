@@ -99,9 +99,12 @@ def get_response(browser, url, waiting):
     rd = browser.page_source
     return rd
 
+
 def parse_keyword(keyword, project, browser):
+    print "3123"
     client = MongoClient('localhost', 27017)
     db = client[project]
+    print "3213"
 
     # http://s.weibo.com/weibo/%25E7%2588%25B1%25E6%2583%2585&page=9
     # nodup=1 real time
@@ -109,7 +112,6 @@ def parse_keyword(keyword, project, browser):
     # query = query.replace('%', '%25')
 
     url = 'http://s.weibo.com/weibo/' + keyword + '&nodup=1'
-    # print url
 
     rd = get_response(browser, url, WAITING_TIME)
 
@@ -119,28 +121,17 @@ def parse_keyword(keyword, project, browser):
     f.close()
 
     soup = BeautifulSoup(rd, 'html5lib')
-
     # Get the number of the pages
     pages = 1
-    try:
-        pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
-    except:
-        # 可缩短下次对同一个词搜索的时间间隙
-        print "the total page number was not acquired. Probably need to try again."
-
+    pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
     print "total pages = %d" % pages
     stop_flag = False
 
     for i in range(pages):
-        url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1) + '&nodup=1'
+        url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
         print url.decode("utf-8")
         rd = get_response(browser, url, WAITING_TIME)
-        # repeated code start
-        # c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
-        # c = rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67]
-        # soup = BeautifulSoup(c, 'html5lib')
         soup = BeautifulSoup(rd, 'html5lib')
-        #soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
         posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
         f = open("../data/parse_keyword_1111" + toPinyin(keyword) + ".html", "w")
@@ -195,12 +186,46 @@ def update_keyword(keyword, now):
     pass
 
 
+def parse_item(post, keyword):
+    mid = post.attrs['mid']
+    face_icon = post.find('div', class_="WB_face W_fl")
+    userid = face_icon.find("a").attrs['href'][1:]
+    username = face_icon.find("img").attrs['alt']
+
+    post_content = post.find('div', class_='list_con')
+
+    if post_content.find('i', class_='W_icon icon_approve') is not None:
+        verified = True
+    else:
+        verified = False
+
+    content = post_content.find('span', {'node-type': 'text'}).get_text()
+    ul = post_content.find('ul', class_='clearfix')
+    for li in ul.findAll('li'):
+        txt = li.get_text().lstrip().rstrip()
+        if "转发" in txt:
+            fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
+    # the last one is the like count.
+    like_txt = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
+    # time
+    t = post_content.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+
+    # t = '2015-10-05 08:51'   timestamp from weibo example
+    tzchina = timezone('Asia/Chongqing')
+    # utc = timezone("UTC")
+    t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, )
+
+    print mid, userid, username, verified, fwd_count, like_txt, t, content
+
+
 def parse_post(post, keyword):
     mid = post.attrs['mid']
-
-    username = post.find('a', class_='W_texta W_fb').attrs['title']
-    print username
     try:
+        if "title" in post.find('img', class_='W_texta W_fb').attrs.keys():
+            username = post.find('img', class_='W_texta W_fb').attrs['title']
+        else:
+            username = post.find("img", class_="W_face_radius").attrs['alt']
+
         if "usercard" in post.find('a', class_='W_texta W_fb').attrs.keys():
             userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
             userid = userid_tmp[3:userid_tmp.index("&")]
@@ -296,6 +321,7 @@ def parse_post(post, keyword):
     except UnicodeEncodeError, e:
         print e.message
 
+    print username
     return result_json
 
 
@@ -317,40 +343,56 @@ def parse_repost(project, keyword, browser):
             f.close()
             repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
 
-            counts_tmp = repost_panel.find("div", class_="WB_handle")
+            for li in repost_panel.find("div", class_="WB_handle").findAll("li"):
+                txt = li.get_text().lstrip().rstrip()
+                if "转发" in txt:
+                    fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
+                if "评论" in txt:
+                    cmt_count = int("0" + txt.replace("评论", "").lstrip().rstrip())
+            # the last one is the like count.
+            like_txt = repost_panel.find("div", class_="WB_handle").findAll("li")[3].get_text().lstrip().rstrip()
+            like_count = int("0" + like_txt)
 
-            # action-type fl_forward
-            counts = counts_tmp.findAll("li")
+            print fwd_count, cmt_count, like_count
 
-            page_tmp = repost_panel.findAll("a", class_="page S_txt1")
-            print "3213"
+            if fwd_count is not post['fwd_count']:
+                # sometimes, there is no page list since one page is enough for showing all the posts/comments.
+                pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
+                # parsing the repost list
+                reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})
+                for post in reposts:
+                    parse_item(post, keyword)
+                next_page = ''
+                if pages_flag is not None:
+                    # pages = int(pages_flag[-1].get_text())
+                    # obtain the next page
+                    next_page = repost_panel.findAll("span", {'action-type': 'feed_list_page'})[-1].get_text()
+                if next_page == '下一页':
+                    browser.find_element_by_link_text("下一页").click()
+
+            if cmt_count is not post['cmt_count'] or fwd_count is not post['fwd_count'] or like_count is not post[
+                'like_count']:
+                db[toPinyin(keyword)].update({'mid': post['mid']}, {'$set': {
+                    'fwd_count': fwd_count,
+                    'cmt_count': cmt_count,
+                    'like_count': like_count
+                }})
+
+                # db.users.insert_one({'userid': user['userid']}, {'$set': {
+                #     'gender': unicode(gender),
+                #     'birthday': birthday,
+                #     'loc': loc,
+                #     'verified': verified,
+                #     'verified_info': verified_info,
+                #     'latlng': latlng
+                # }})
+                #
+                #
+
+
         except KeyError, e:
             e.message
 
-
-def parse_profile_2(project, keyword, browser):
-    client = MongoClient('localhost', 27017)
-    db = client[project]
-    # STEP ONE：already got the latlng from the content
-    # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(100)
-    for user in users:
-        # user['userid'] = 5196716097
-        # url = "http://www.weibo.com/%s/info" % user['userid']
-        url = "http://weibo.cn/%s/info" % user['userid']
-        rd = get_response(browser, url, 20)
-        gender = ''
-        birthday = 1900
-        verified = False
-        verified_info = ''
-        loc = ''
-        latlng = [0, 0]
-        if rd != {}:
-            f = open("../data/parse_profile_%s.html" % user['userid'], "w")
-            f.write(str(rd))
-            f.close()
-        else:
-            continue
 
 def parse_profile(project, keyword, browser):
     client = MongoClient('localhost', 27017)

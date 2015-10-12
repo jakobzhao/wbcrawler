@@ -8,7 +8,7 @@ Created on Oct 10, 2015
 @organization: The Ohio State University
 '''
 
-from utils import parse_repost, weibo_login
+from utils import parse_repost, weibo_manual_login
 
 
 # ProjectName
@@ -17,7 +17,8 @@ project_name = "weibo"
 # Variables
 keyword = '乡政府'
 
-br = weibo_login()
+br = weibo_manual_login()
+
 parse_repost(project_name, keyword, br)
 if __name__ == '__main__':
     pass

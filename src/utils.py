@@ -14,11 +14,9 @@ import time
 import sys
 import os
 import socket
-import cookielib
 import datetime
 import json
 
-import mechanize
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors
 from pytz import timezone
@@ -62,98 +60,43 @@ def weibo_manual_login():
     print "login successfully."
     return browser
 
-def weibo_login():
 
-    br = mechanize.Browser()
-    #cookie jar
-    cj = cookielib.LWPCookieJar()
-    br.set_cookiejar(cj)
+def weibo_manual_cn_login():
+    from selenium import webdriver
+    from selenium.webdriver.common.keys import Keys
 
-    #加上各种协议
-    br.set_handle_equiv(True)
-    #br.set_handle_gzip(True)
-    br.set_handle_redirect(True)
-    br.set_handle_referer(True)
-    br.set_handle_robots(False)
+    chromedriver = "C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe"
 
-    br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
-    # br.set_proxies({"http": "165.139.179.225:8080"})
-    #加上自己浏览器头部，和登陆了通行证的cookie
-    br.addheaders=[('User-Agent','Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.153 Safari/537.36'),('Cookie',ck) ]
+    os.environ["webdriver.chrome.driver"] = chromedriver
+    browser = webdriver.Chrome(chromedriver)
 
-    # for f in br.forms():
-    #     print f
-    # br.select_form(nr=0)
-    # print br
-    # br.form['username']='13580491531'
-    # br.form['password']='buhui1314iliting'
-    # br.submit()
-    # br.add_password('http://login.sina.com.cn/signup/signin.php?entry=sso','13580491531','buhui1314iliting')
-    #登陆新浪通行证
-    br.open('http://login.sina.com.cn/signup/signin.php?entry=sso')
-    # a = br.request.unredirected_hdrs['Cookie']
-    # a = a[a.index("SGUID=")+6:a.index("ArtiFSize")-1]
-    # print a
-    return br
+    browser.get("http://login.weibo.cn/login/")
+
+    user = browser.find_element_by_xpath('/html/body/div[2]/form/div/input[1]')
+    user.send_keys(username, Keys.ARROW_DOWN)
+
+    passwd = browser.find_element_by_xpath('/html/body/div[2]/form/div/input[2]')
+    passwd.send_keys(password, Keys.ARROW_DOWN)
+
+    # //*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input
+    browser.find_element_by_xpath('/html/body/div[2]/form/div/input[8]').click()
+    vcode = browser.find_element_by_xpath('/html/body/div[3]/form/div/input[3]')
+    if vcode:
+        code = raw_input("verify code:")
+        if code:
+            vcode.send_keys(code, Keys.ARROW_DOWN)
+
+    browser.find_element_by_xpath('/html/body/div[3]/form/div/input[10]').click()
+
+    print "login successfully."
+    return browser
+
 
 def get_response(browser, url, waiting):
     browser.get(url)
     # browser.implicitly_wait(waiting)
     time.sleep(waiting)
     rd = browser.page_source
-    return rd
-
-
-def get_response2(browser, url, waiting):
-    rd = {}
-    import httplib
-    time.sleep(waiting)
-    i = 0
-    while rd == {} and i < 3:
-        i += 1
-        print "original url: %s" % url.decode("utf-8")
-        try:
-            rd = browser.open(url, timeout=20)
-            final_url = rd.geturl().decode("utf-8")
-            print "final url: %s" % final_url
-            if "login.weibo.cn/login" in final_url:
-                f = open("1.html", "w")
-                f.write(rd.read())
-                f.close()
-                print "mechanize cannot be used."
-                exit(-1)
-                # browser.click_link(name='submit')
-                # #exit(-1)
-                # #     for form in browser.forms():
-                # #         print form.action
-                # #         print form
-                # #     #browser.select_form(nr=0)
-                # browser.forms()[0]["mobile"] = "vcjmi41976504@126.com"
-                # browser.forms()[0]["password"] = "zx1987"
-                # browser.forms()[0].submit()
-                # rd = browser.open(url, timeout=20)
-                # f = open("2.html", "w")
-                # f.write(rd.read())
-                # f.close()
-                # print final_url
-                # print "needs to login"
-            if "login.sina.com.cn" in final_url:
-                print final_url
-                print "cookie temporarily expired."
-                exit(-1)
-            rd = rd.read()
-        except urllib2.URLError, e:
-            rd = {}
-            print e
-            print "urlib2 error. get_response."
-        except socket.timeout, e:
-            rd = {}
-            print e.message
-            print "get_response"
-        except httplib.IncompleteRead, e:
-            rd = {}
-            print e.message
-            print "Incompleted read."
     return rd
 
 def parse_keyword(keyword, project, browser):
@@ -163,7 +106,7 @@ def parse_keyword(keyword, project, browser):
     # http://s.weibo.com/weibo/%25E7%2588%25B1%25E6%2583%2585&page=9
     # nodup=1 real time
     # query = urllib.quote(keyword)
-    #query = query.replace('%', '%25')
+    # query = query.replace('%', '%25')
 
     url = 'http://s.weibo.com/weibo/' + keyword + '&nodup=1'
     # print url
@@ -171,17 +114,11 @@ def parse_keyword(keyword, project, browser):
     rd = get_response(browser, url, WAITING_TIME)
 
     # output for testing
-    f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
+    f = open("../data/parse_keyword_" + toPinyin(keyword) + ".html", "w")
     f.write(rd)
     f.close()
 
-    # c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
-    # rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67].replace("&gt", "<").replace("&lt", ">")
-    # c = rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67]
-    # soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
-    # soup = BeautifulSoup(c, 'html5lib')
     soup = BeautifulSoup(rd, 'html5lib')
-
 
     # Get the number of the pages
     pages = 1
@@ -206,7 +143,7 @@ def parse_keyword(keyword, project, browser):
         #soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
         posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
-        f = open("parse_keyword_1111" + toPinyin(keyword) + ".html", "w")
+        f = open("../data/parse_keyword_1111" + toPinyin(keyword) + ".html", "w")
         f.write(rd)
         f.close()
 
@@ -375,7 +312,7 @@ def parse_repost(project, keyword, browser):
             print url
             rd = get_response(browser, url, 20)
 
-            f = open("parse_repost_%s.html" % post['mid'], "w")
+            f = open("../data/parse_repost_%s.html" % post['mid'], "w")
             f.write(str(rd))
             f.close()
             repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
@@ -409,7 +346,7 @@ def parse_profile_2(project, keyword, browser):
         loc = ''
         latlng = [0, 0]
         if rd != {}:
-            f = open("parse_profile_%s.html" % user['userid'], "w")
+            f = open("../data/parse_profile_%s.html" % user['userid'], "w")
             f.write(str(rd))
             f.close()
         else:
@@ -432,7 +369,7 @@ def parse_profile(project, keyword, browser):
         loc = ''
         latlng = [0, 0]
         if rd != {}:
-            f = open("parse_profile_%s.html" % user['userid'], "w")
+            f = open("../data/parse_profile_%s.html" % user['userid'], "w")
             f.write(str(rd))
             f.close()
             tabs = BeautifulSoup(rd, 'html5lib').findAll("div", class_="c")
@@ -521,7 +458,7 @@ def parse_location(project, keyword, browser):
         # print url
         rd = get_response(browser, url, WAITING_TIME)
         # output for testing
-        f = open("parse_location_%s.html" % user['userid'], "w")
+        f = open("../data/parse_location_%s.html" % user['userid'], "w")
         f.write(rd)
         f.close()
 

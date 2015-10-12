@@ -33,8 +33,6 @@ current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
 
 
 def weibo_manual_login():
-    username = "vcjmi41976504@126.com"
-    password = "zx1987"
 
     from selenium import webdriver
     from selenium.webdriver.common.keys import Keys
@@ -98,8 +96,15 @@ def weibo_login():
     # print a
     return br
 
-
 def get_response(browser, url, waiting):
+    browser.get(url)
+    # browser.implicitly_wait(waiting)
+    time.sleep(waiting)
+    rd = browser.page_source
+    return rd
+
+
+def get_response2(browser, url, waiting):
     rd = {}
     import httplib
     time.sleep(waiting)
@@ -152,16 +157,15 @@ def get_response(browser, url, waiting):
     return rd
 
 def parse_keyword(keyword, project, browser):
-    import urllib
     client = MongoClient('localhost', 27017)
     db = client[project]
 
     # http://s.weibo.com/weibo/%25E7%2588%25B1%25E6%2583%2585&page=9
     # nodup=1 real time
-    query = urllib.quote(keyword)
-    query = query.replace('%', '%25')
+    # query = urllib.quote(keyword)
+    #query = query.replace('%', '%25')
 
-    url = 'http://s.weibo.com/weibo/' + query + '&nodup=1'
+    url = 'http://s.weibo.com/weibo/' + keyword + '&nodup=1'
     # print url
 
     rd = get_response(browser, url, WAITING_TIME)
@@ -171,8 +175,12 @@ def parse_keyword(keyword, project, browser):
     f.write(rd)
     f.close()
 
-    c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
-    soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
+    # c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
+    # rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67].replace("&gt", "<").replace("&lt", ">")
+    # c = rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67]
+    # soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
+    # soup = BeautifulSoup(c, 'html5lib')
+    soup = BeautifulSoup(rd, 'html5lib')
 
 
     # Get the number of the pages
@@ -187,15 +195,18 @@ def parse_keyword(keyword, project, browser):
     stop_flag = False
 
     for i in range(pages):
-        url = 'http://s.weibo.com/weibo/' + query + '&page=' + str(i + 1) + '&nodup=1'
+        url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1) + '&nodup=1'
         print url.decode("utf-8")
         rd = get_response(browser, url, WAITING_TIME)
         # repeated code start
-        c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
-        soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
+        # c = rd[rd.index('"pid":"pl_weibo_direct"') - 1: rd.index('"pid":"pl_weibo_relation"') - 61]
+        # c = rd[rd.index('"pid":"pl_weibo_direct"') + 188 : rd.index('"pid":"pl_weibo_relation"') - 67]
+        # soup = BeautifulSoup(c, 'html5lib')
+        soup = BeautifulSoup(rd, 'html5lib')
+        #soup = BeautifulSoup(json.loads(c)['html'], 'html5lib')
         posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
-        f = open("parse_keyword_" + toPinyin(keyword) + ".html", "w")
+        f = open("parse_keyword_1111" + toPinyin(keyword) + ".html", "w")
         f.write(rd)
         f.close()
 
@@ -530,8 +541,10 @@ def parse_location(project, keyword, browser):
                     t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
                                                 tzinfo=tzchina)
                 else:
-                    t1 = t.split("æœˆ")[0]
-                    t2 = t.split("æœˆ")[1].split("æ—¥")[0]
+                    # t1 = t.split("æœˆ")[0]
+                    # t2 = t.split("æœˆ")[1].split("æ—¥")[0]
+                    t1 = t.split("月")[0]
+                    t2 = t.split("月")[1].split("日")[0]
                     t3 = t.split(" ")[1].split(":")
                     t_china = datetime.datetime(2015, int(t1), int(t2), int(t3[0]), int(t3[1]), 0, 0, tzinfo=tzchina)
 

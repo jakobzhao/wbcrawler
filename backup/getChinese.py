@@ -25,11 +25,12 @@ Created on Oct 10, 2012
 # 1: reply
 # 2: comments
 import sqlite3
+import os.path
+
 import networkx as nx
 import matplotlib.pylab as plt
-
 from matplotlib.font_manager import fontManager
-import os.path
+
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei']
 
 #--------------------------------find the chinese characters-----------------------------------

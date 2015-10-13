@@ -9,7 +9,7 @@ Created on Oct 26, 2012
 @organization: The Ohio State University
 '''
 
-from pyictclas import PyICTCLAS,CodeType
+from src.pyictclas import PyICTCLAS, CodeType
 
 a = PyICTCLAS()
 #text = '如果你增加了一些成员变量, 全能补全还不能马上将新成员补全, 需要你重新生成一下tags文件, 但是你不用重启vim, 只是重新生成一下tags文件就行了, 这时全能补全已经可以自动补全了, 还真够"全能"吧'

@@ -10,7 +10,9 @@ Created on Oct 10, 2012
 from pylab import plot,show
 from numpy import vstack,array
 from numpy.random import rand
+
 from scipy.cluster.vq import kmeans,vq
+
 
 # data generation
 data = vstack((rand(150,2) + array([.5,.5]),rand(150,2)))

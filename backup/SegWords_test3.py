@@ -9,7 +9,10 @@ Created on Nov 11, 2012
 @organization: The Ohio State University
 '''
 
-import sqlite3, os, sys
+import sqlite3
+import os
+import sys
+
 database = '../data/shiyipan.db'
 
 #------------------------reading the words which will be removed--------------------------
@@ -48,7 +51,7 @@ for item in text:
 
 #from pyictclas import PyICTCLAS,CodeType
 
-from pyictclas import PyICTCLAS,CodeType
+from src.pyictclas import PyICTCLAS, CodeType
 
 pcl = PyICTCLAS()
 pcl.ictclas_importUserDict('./ICTCLAS/user.txt',CodeType.CODE_TYPE_UTF8)

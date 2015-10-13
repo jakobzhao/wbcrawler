@@ -19,6 +19,7 @@ Created on Oct 26, 2012
 # 1: reply
 # 2: comments
 import sqlite3
+
 import networkx as nx
 import matplotlib.pylab as plt
 

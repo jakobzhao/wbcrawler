@@ -17,7 +17,7 @@ from settings import *
 start = datetime.datetime.now()
 
 br = sina_login(u1, p1)
-parse_keyword(keyword, project_name, br)
+parse_keyword(project_name, keyword, br)
 
 end = datetime.datetime.now()
 

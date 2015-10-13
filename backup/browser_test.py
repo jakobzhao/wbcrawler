@@ -11,8 +11,6 @@ import cookielib
 
 import mechanize
 
-from settings import *
-
 br = mechanize.Browser()
 # cookie jar
 cj = cookielib.LWPCookieJar()

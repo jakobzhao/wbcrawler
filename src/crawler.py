@@ -10,19 +10,13 @@ Created on Oct 4, 2015
 
 import datetime
 
-from utils import parse_keyword, weibo_manual_login
+from utils import parse_keyword, sina_login
+from settings import *
+
 
 start = datetime.datetime.now()
 
-# ProjectName
-project_name = "weibo"
-
-#Variables
-keyword = '雾霾'
-# keyword = '地方政府'
-# keyword = '乡政府'
-
-br = weibo_manual_login()
+br = sina_login(u1, p1)
 parse_keyword(keyword, project_name, br)
 
 end = datetime.datetime.now()

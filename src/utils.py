@@ -27,10 +27,9 @@ ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-current_path = os.path.split( os.path.realpath( sys.argv[0] ) )[0]
 
 
-def weibo_manual_login():
+def weibo_manual_login(username, password):
 
     from selenium import webdriver
     from selenium.webdriver.common.keys import Keys
@@ -43,12 +42,15 @@ def weibo_manual_login():
     browser.get("http://weibo.com/login.php")
 
     user = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[1]/div/input')
+    # user = WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH,'//*[@id="pl_login_form"]/div[3]/div[2]/div[1]/div/input')))
+    # user = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[1]/div/input')
     user.send_keys(username, Keys.ARROW_DOWN)
 
     passwd = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[2]/div/input')
     passwd.send_keys(password, Keys.ARROW_DOWN)
 
     # //*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input
+
     browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[6]').click()
     vcode = browser.find_element_by_xpath('//*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input')
     if vcode:
@@ -61,34 +63,40 @@ def weibo_manual_login():
     return browser
 
 
-def weibo_manual_cn_login():
+def sina_login(username, password):
+
     from selenium import webdriver
     from selenium.webdriver.common.keys import Keys
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
 
     chromedriver = "C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe"
 
     os.environ["webdriver.chrome.driver"] = chromedriver
     browser = webdriver.Chrome(chromedriver)
 
-    browser.get("http://login.weibo.cn/login/")
+    browser.get("https://login.sina.com.cn/")
 
-    user = browser.find_element_by_xpath('/html/body/div[2]/form/div/input[1]')
+    user = browser.find_element_by_id('username')
     user.send_keys(username, Keys.ARROW_DOWN)
 
-    passwd = browser.find_element_by_xpath('/html/body/div[2]/form/div/input[2]')
+    passwd = browser.find_element_by_id('password')
     passwd.send_keys(password, Keys.ARROW_DOWN)
 
-    # //*[@id="pl_login_form"]/div[3]/div[2]/div[3]/div/input
-    browser.find_element_by_xpath('/html/body/div[2]/form/div/input[8]').click()
-    vcode = browser.find_element_by_xpath('/html/body/div[3]/form/div/input[3]')
+    browser.find_element_by_class_name('smb_btn').click()
+
+    vcode = browser.find_element_by_id('door')
     if vcode:
         code = raw_input("verify code:")
         if code:
             vcode.send_keys(code, Keys.ARROW_DOWN)
 
-    browser.find_element_by_xpath('/html/body/div[3]/form/div/input[10]').click()
-
-    print "login successfully."
+    browser.find_element_by_class_name('smb_btn').click()
+    weibo_tab = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
+    WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH, weibo_tab)))
+    browser.find_element_by_xpath(weibo_tab).click()
+    print "logged in successfully."
     return browser
 
 
@@ -101,17 +109,15 @@ def get_response(browser, url, waiting):
 
 
 def parse_keyword(keyword, project, browser):
-    print "3123"
     client = MongoClient('localhost', 27017)
     db = client[project]
-    print "3213"
 
     # http://s.weibo.com/weibo/%25E7%2588%25B1%25E6%2583%2585&page=9
     # nodup=1 real time
     # query = urllib.quote(keyword)
     # query = query.replace('%', '%25')
 
-    url = 'http://s.weibo.com/weibo/' + keyword + '&nodup=1'
+    url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
 
     rd = get_response(browser, url, WAITING_TIME)
 
@@ -144,23 +150,31 @@ def parse_keyword(keyword, project, browser):
         for post in posts:
             json_data = parse_post(post, keyword)
             try:
-                post_return = db[toPinyin(keyword)].insert_one(json_data['post'])
-                user_return = db.users.insert_one(json_data['user'])
+                db.users.insert_one(json_data['user'])
+            except errors.DuplicateKeyError, e:
+                print "Duplicated user."
+                print e.message
+
+            try:
+                db[toPinyin(keyword)].insert_one(json_data['post'])
+
             except KeyError, e:
                 print e.message + ". BeautifulSoup does not working properly."
             except errors.DuplicateKeyError, e:
+                print "Duplicated item is found, needs update."
                 print e.message
+                # update
+                # obtain the timestamp of a post
+                # 2015-10-07 00:26:00+08:06  Beiing Time, therefore, when comparing, I have to change the local time to beijing time.
+                tzchina = timezone('Asia/Chongqing')
+                timestamp = json_data['post']['timestamp']
+                # post_time = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=tzchina)
+                # What is the time now? pay attention to the time zone differences.
+                now = datetime.datetime.now(tzchina)
+                delta = now - timestamp
                 # the first page may have selected post from days ago. or the post was published within a day, still update and run.
                 if i == 0 or delta.days < 1:
-                    # update
-                    # obtain the timestamp of a post
-                    # 2015-10-07 00:26:00+08:06  Beiing Time, therefore, when comparing, I have to change the local time to beijing time.
-                    tzchina = timezone('Asia/Chongqing')
-                    timestamp = json_data['post']['timestamp']
-                    # post_time = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=tzchina)
-                    # What is the time now? pay attention to the time zone differences.
-                    now = datetime.datetime.now(tzchina)
-                    delta = now - timestamp
+
                     # the second time constraint, if the post was published within one day, update the post.
                     if delta.days < 1:
                         db[toPinyin(keyword)].update({'mid': json_data['post']['mid']},
@@ -187,44 +201,94 @@ def update_keyword(keyword, now):
 
 
 def parse_item(post, keyword):
-    mid = post.attrs['mid']
-    face_icon = post.find('div', class_="WB_face W_fl")
-    userid = face_icon.find("a").attrs['href'][1:]
-    username = face_icon.find("img").attrs['alt']
+    user_name = ""
+    content = ""
+    userid = 0
+    mid = 0
+    fwd_count = 0
+    cmt_count = 0
+    like_count = 0
+    user_verified = False
+    t_china = datetime.datetime.utcnow()
+    try:
+        face_icon = post.find('div', class_="WB_face W_fl")
+        userid = int(face_icon.find("a").attrs['usercard'][3:])
+        mid = int(post.attrs['mid'])
+        user_name = face_icon.find("img").attrs['alt']
+        post_content = post.find('div', class_='list_con')
 
-    post_content = post.find('div', class_='list_con')
+        if post_content.find('i', class_='W_icon icon_approve') is not None:
+            user_verified = True
+        else:
+            user_verified = False
 
-    if post_content.find('i', class_='W_icon icon_approve') is not None:
-        verified = True
-    else:
-        verified = False
+        content = post_content.find('span', {'node-type': 'text'}).get_text()
 
-    content = post_content.find('span', {'node-type': 'text'}).get_text()
-    ul = post_content.find('ul', class_='clearfix')
-    for li in ul.findAll('li'):
-        txt = li.get_text().lstrip().rstrip()
-        if "转发" in txt:
-            fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
-    # the last one is the like count.
-    like_txt = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
-    # time
-    t = post_content.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+        ul = post_content.find('ul', class_='clearfix')
+        for li in ul.findAll('li'):
+            txt = li.get_text().lstrip().rstrip()
+            if "转发" in txt:
+                fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
+        # the last one is the like count.
+        like_txt = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
+        # time
+        t = post_content.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
 
-    # t = '2015-10-05 08:51'   timestamp from weibo example
-    tzchina = timezone('Asia/Chongqing')
-    # utc = timezone("UTC")
-    t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, )
+        # t = '2015-10-05 08:51'   timestamp from weibo example
+        tzchina = timezone('Asia/Chongqing')
+        t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, )
+    except AttributeError, e:
+        print e.message
 
-    print mid, userid, username, verified, fwd_count, like_txt, t, content
+    result_json = {
+        "reply": {
+            "keyword": keyword,
+            "mid": mid,
+            "content": content.encode('utf-8', 'ignore'),
+            "timestamp": t_china,
+            "fwd_count": fwd_count,
+            "cmt_count": cmt_count,
+            "like_count": like_count,
+
+            "sentiment": 0,
+            "user": {
+                "userid": userid,
+                "username": user_name.encode('utf-8', 'ignore'),
+                "user_verified": user_verified,
+                "location": "",
+                "follower_count": 0,
+                "friend_count": 0,
+                "verified_info": "",
+                "path": []
+            },
+            "comments": [],
+            "reply": []
+        },
+        "user": {
+            "userid": userid,
+            "username": user_name.encode('utf-8', 'ignore'),
+            "verified": user_verified,
+            "verified_info": '',
+            "gender": "",
+            "birthday": 1900,
+            "follower_count": 0,
+            "friend_count": 0,
+            "verified_info": "",
+            "path": []
+        }
+    }
+
+    print mid, userid, user_name, user_verified, fwd_count, cmt_count
+    return result_json
 
 
 def parse_post(post, keyword):
     mid = post.attrs['mid']
     try:
-        if "title" in post.find('img', class_='W_texta W_fb').attrs.keys():
-            username = post.find('img', class_='W_texta W_fb').attrs['title']
+        if post.find('img', class_='W_texta W_fb') is not None:
+            user_name = post.find('img', class_='W_texta W_fb').attrs['title']
         else:
-            username = post.find("img", class_="W_face_radius").attrs['alt']
+            user_name = post.find("img", class_="W_face_radius").attrs['alt']
 
         if "usercard" in post.find('a', class_='W_texta W_fb').attrs.keys():
             userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
@@ -290,7 +354,7 @@ def parse_post(post, keyword):
             "sentiment": 0,
             "user": {
                 "userid": int(userid),
-                "username": username.encode('utf-8', 'ignore'),
+                "username": user_name.encode('utf-8', 'ignore'),
                 "user_verified": user_verified,
                 "location": "",
                 "follower_count": 0,
@@ -303,7 +367,7 @@ def parse_post(post, keyword):
         },
         "user": {
             "userid": int(userid),
-            "username": username,
+            "username": user_name.encode('utf-8', 'ignore'),
             "verified": user_verified,
             "verified_info": '',
             "gender": "",
@@ -317,11 +381,10 @@ def parse_post(post, keyword):
         }
     }
     try:
-        print username, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
+        print user_name, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
     except UnicodeEncodeError, e:
         print e.message
 
-    print username
     return result_json
 
 
@@ -350,45 +413,95 @@ def parse_repost(project, keyword, browser):
                 if "评论" in txt:
                     cmt_count = int("0" + txt.replace("评论", "").lstrip().rstrip())
             # the last one is the like count.
-            like_txt = repost_panel.find("div", class_="WB_handle").findAll("li")[3].get_text().lstrip().rstrip()
+            like_txt = repost_panel.find("div", class_="WB_handle").findAll("li")[-1].get_text().lstrip().rstrip()
             like_count = int("0" + like_txt)
 
-            print fwd_count, cmt_count, like_count
+            replies = db[toPinyin(keyword)].find({'mid': post['mid']})
+            mid = []
+            for reply in replies:
+                mid.append(reply['mid'])
 
-            if fwd_count is not post['fwd_count']:
-                # sometimes, there is no page list since one page is enough for showing all the posts/comments.
-                pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
-                # parsing the repost list
-                reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})
-                for post in reposts:
-                    parse_item(post, keyword)
-                next_page = ''
-                if pages_flag is not None:
-                    # pages = int(pages_flag[-1].get_text())
-                    # obtain the next page
-                    next_page = repost_panel.findAll("span", {'action-type': 'feed_list_page'})[-1].get_text()
-                if next_page == '下一页':
-                    browser.find_element_by_link_text("下一页").click()
+            # 80% some are hidden.
+            num_replies = len(mid)
 
-            if cmt_count is not post['cmt_count'] or fwd_count is not post['fwd_count'] or like_count is not post[
-                'like_count']:
+            ##########################################
+            # flow size control
+            # important
+            if post['fwd_count'] < fwd_count or num_replies < fwd_count * 0.5:
+                next_page = '下一页'
+                i = 0
+                stop_flag = 0
+                while next_page == '下一页':
+                    i += 1
+                    print "page %d" % i
+                    # sometimes, there is no page list since one page is enough for showing all the posts/comments.
+                    # pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
+                    # parsing the repost list
+                    reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})
+                    for item in reposts:
+                        item_json = parse_item(item, keyword)
+
+                        if item_json['reply']['mid'] not in mid:
+
+                            # insert user
+                            try:
+                                db.users.insert_one(item_json['user'])
+                            except errors.DuplicateKeyError, e:
+                                print "Duplicated User."
+                                print e.message
+
+                            # update reply set, no duplicates
+                            if post['mid'] not in mid:
+                                db[toPinyin(keyword)].update(
+                                    {'mid': post['mid']},
+                                    {'$push':
+                                         {'reply': item_json['reply']
+                                          }
+                                     }
+                                )
+                            else:
+                                print "already inserted, meaning all the past replies has been inserted."
+                                stop_flag = 1
+                                break
+
+                            # insert post
+                            # count size control
+                            if item_json['reply']['fwd_count'] > 10:
+                                try:
+                                    db[toPinyin(keyword)].insert_one(item_json['reply'])
+                                except errors.DuplicateKeyError, e:
+                                    print "Duplicated post."
+                                    print e.message
+
+                    if stop_flag == 1:
+                        break
+                    next_page = ''
+                    # if pages_flag != None:
+                    #    # obtain the next page
+                    page_lis = repost_panel.findAll("span", {'action-type': 'feed_list_page'})
+                    if len(page_lis) > 0:
+                        next_page = page_lis[-1].get_text()
+                    else:
+                        next_page = 'stop'
+                    if next_page == '下一页':
+                        from selenium.common import exceptions as SE
+                        try:
+                            browser.find_element_by_link_text("下一页").click()
+                            time.sleep(WAITING_TIME)
+                            repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div",
+                                                                                               class_="WB_feed WB_feed_profile")
+                            reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})
+                            pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
+                        except SE.WebDriverException, e:
+                            print e.message
+                            print "next page error"
+
+            if cmt_count != post['cmt_count'] or fwd_count != post['fwd_count'] or like_count != post['like_count']:
                 db[toPinyin(keyword)].update({'mid': post['mid']}, {'$set': {
                     'fwd_count': fwd_count,
                     'cmt_count': cmt_count,
                     'like_count': like_count
                 }})
-
-                # db.users.insert_one({'userid': user['userid']}, {'$set': {
-                #     'gender': unicode(gender),
-                #     'birthday': birthday,
-                #     'loc': loc,
-                #     'verified': verified,
-                #     'verified_info': verified_info,
-                #     'latlng': latlng
-                # }})
-                #
-                #
-
 
         except KeyError, e:
             e.message
@@ -402,7 +515,7 @@ def parse_profile(project, keyword, browser):
     users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(100)
     for user in users:
         # user['userid'] = 5196716097
-        url = "http://weibo.cn/%s/info?rl=100" % user['userid']
+        url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response(browser, url, 20)
         gender = ''
         birthday = 1900
@@ -488,16 +601,18 @@ def geocode(loc):
         print e.message
     return [lat, lng]
 
+
 def parse_location(project, keyword, browser):
 
     client = MongoClient('localhost', 27017)
     db = client[project]
     # STEP ONE：already got the latlng from the content
     users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(100)
+
     for user in users:
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
-        # print url
+        print url
         rd = get_response(browser, url, WAITING_TIME)
         # output for testing
         f = open("../data/parse_location_%s.html" % user['userid'], "w")
@@ -512,6 +627,7 @@ def parse_location(project, keyword, browser):
             for post in posts:
                 # '2013-12-6 18:14'
                 t = post.find("a", class_="date").get_text().lstrip()
+                #print t
                 tzchina = timezone('Asia/Chongqing')
                 if "-" in t:
                     t1 = t.split("-")
@@ -519,13 +635,15 @@ def parse_location(project, keyword, browser):
                     t3 = t2[1].split(":")
                     t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
                                                 tzinfo=tzchina)
-                else:
+                elif "月" in t:
                     # t1 = t.split("æœˆ")[0]
                     # t2 = t.split("æœˆ")[1].split("æ—¥")[0]
                     t1 = t.split("月")[0]
                     t2 = t.split("月")[1].split("日")[0]
                     t3 = t.split(" ")[1].split(":")
                     t_china = datetime.datetime(2015, int(t1), int(t2), int(t3[0]), int(t3[1]), 0, 0, tzinfo=tzchina)
+                else:
+                    t_china = datetime.datetime.utcnow()
 
                 # path
                 if post.find("div", class_="time_map_pao2") is not None:
@@ -551,9 +669,11 @@ def parse_location(project, keyword, browser):
                 else:
                     lat = 0
                     lng = 0
-
+                if lat == '':
+                    lat = 0
+                    lng = 0
+                print user['username'], lat, lng, t_china
                 path.append([float(lat), float(lng), t_china])
-                print lat, lng, t_china
         else:
             # 提取path
             path.append([0, 0, 0])
@@ -562,14 +682,7 @@ def parse_location(project, keyword, browser):
         # 对于post的latlng的更新，我认为可以不着急？
         latlng = [path[0][0], path[0][1]]  # 临时策略
         db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
-        #最后一个是对于本身帖子没有位置，path也没有的。
-        #parse_profile() 可以找到位置
 
-        # 针对一人多贴的情况，对个人的扫描。地址重要，所以扫了，然后每一个人的主页？？验证类型。其实可以不要。
-
-
-        #所以，只去找回帖，report就好？
-    pass
 
 # hanzi to pinyin
 def toPinyin(keyword):

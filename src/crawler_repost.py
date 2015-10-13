@@ -8,17 +8,10 @@ Created on Oct 10, 2015
 @organization: The Ohio State University
 '''
 
-from utils import parse_repost, weibo_manual_login
+from utils import parse_repost, sina_login
+from settings import *
 
-
-# ProjectName
-project_name = "weibo"
-
-# Variables
-keyword = '乡政府'
-
-br = weibo_manual_login()
-
+br = sina_login(u3, p3)
 parse_repost(project_name, keyword, br)
 if __name__ == '__main__':
     pass

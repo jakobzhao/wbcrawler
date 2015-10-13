@@ -51,7 +51,7 @@ for item in text:
 
 #from pyictclas import PyICTCLAS,CodeType
 
-from src.pyictclas import PyICTCLAS, CodeType
+from backup.pyictclas import PyICTCLAS, CodeType
 
 pcl = PyICTCLAS()
 pcl.ictclas_importUserDict('./ICTCLAS/user.txt',CodeType.CODE_TYPE_UTF8)

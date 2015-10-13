@@ -1,10 +1,11 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import string, threading, time
-import urllib
+import threading
 import sqlite3
-import sys, os
+import sys
+import os
+
 
 #import ssl, socket
 from pyquery import PyQuery as pq

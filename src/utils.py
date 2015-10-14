@@ -11,12 +11,12 @@ Created on Oct 4, 2015
 import urllib2
 import time
 import sys
-import os
 import datetime
 import json
+from random import randint
 
 from bs4 import BeautifulSoup
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors, DESCENDING
 from pytz import timezone
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -35,19 +35,62 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-def sina_login(username, password):
+def register(project, address, port):
+    client = MongoClient(address, port)
+    db = client[project]
 
-    chromedriver = "C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe"
+    if db.accounts.find({"inused": False}).count() == 0:
+        occupied_msg = "All the accounts are occupied, please try again later."
+        send_email('jakobzhao@gmail.com', occupied_msg)
+        print occupied_msg
+        exit(-1)
 
-    os.environ["webdriver.chrome.driver"] = chromedriver
-    browser = webdriver.Chrome(chromedriver)
+    account_raw = db.accounts.find({"inused": False}).limit(1)[0]
+    account = [account_raw['username'], account_raw['password']]
+
+    db.accounts.update({'username': account_raw['username']}, {'$set': {"inused": True}})
+    print "successfully registered."
+    return account
+
+
+def unregister(project, address, port, account):
+    client = MongoClient(address, port)
+    db = client[project]
+    db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
+    print "successfully unregistered."
+
+
+def create_database(project, address, port, fresh=False):
+    client = MongoClient(address, port)
+    db = client[project]
+    posts = db.posts
+    users = db.users
+
+    if fresh:
+        db.posts.delete_many({})
+        db.users.delete_many({})
+
+    posts.create_index([("mid", DESCENDING)], unique=True)
+    users.create_index([("userid", DESCENDING)], unique=True)
+    return db
+
+
+def sina_login(account):
+    username = account[0]
+    password = account[1]
+
+    # chromedriver = CHROME_PATH
+    # os.environ["webdriver.chrome.driver"] = chromedriver
+    # browser = webdriver.Chrome(chromedriver)
+
+    browser = webdriver.Firefox()
 
     # visit the sina login page
     browser.get("https://login.sina.com.cn/")
 
     # input username
     # user = browser.find_element_by_id('username')
-    user = WebDriverWait(browser, WAITING_TIME).until(EC.presence_of_element_located((By.ID, 'username')))
+    user = WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.presence_of_element_located((By.ID, 'username')))
     user.send_keys(username, Keys.ARROW_DOWN)
 
     # input the passowrd
@@ -66,8 +109,8 @@ def sina_login(username, password):
     browser.find_element_by_class_name('smb_btn').click()
 
     weibo_tab = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
-    WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH, weibo_tab)))
-    browser.find_element_by_xpath(weibo_tab).click()
+    WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.presence_of_element_located((By.XPATH, weibo_tab)))
+    # browser.find_element_by_xpath(weibo_tab).click()
     print "logged in successfully."
     return browser
 
@@ -79,19 +122,20 @@ def get_response(browser, url, waiting):
     return rd
 
 
-def parse_keyword(project, keyword, browser):
-    client = MongoClient('localhost', 27017)
-    db = client[project]
+def interval_of_simulated_human_click():
+    return randint(10, 20)
+
+
+def parse_keyword(db, keyword, browser):
 
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
-    rd = get_response(browser, url, WAITING_TIME)
+    rd = get_response(browser, url, interval_of_simulated_human_click())
     soup = BeautifulSoup(rd, 'html5lib')
 
     # Test
     # f = open("../data/parse_keyword_" + toPinyin(keyword) + ".html", "w")
     # f.write(rd)
     # f.close()
-
 
     # Page number
     pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
@@ -100,7 +144,7 @@ def parse_keyword(project, keyword, browser):
     for i in range(pages):
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
         print url.decode("utf-8")
-        rd = get_response(browser, url, WAITING_TIME)
+        rd = get_response(browser, url, interval_of_simulated_human_click())
         soup = BeautifulSoup(rd, 'html5lib')
         posts = soup.findAll('div', {'action-type': 'feed_list_item'})
 
@@ -119,7 +163,7 @@ def parse_keyword(project, keyword, browser):
                 print "Duplicated user. " + e.message
 
             try:
-                db[toPinyin(keyword)].insert_one(json_data['post'])
+                db.posts.insert_one(json_data['post'])
             except KeyError, e:
                 print "BeautifulSoup does not working properly. " + e.message
             except errors.DuplicateKeyError:
@@ -135,7 +179,7 @@ def parse_keyword(project, keyword, browser):
                 # (2) delta.days < 3 flow control. Keep the program manageable,
                 #            if not, too many queries if run the program for a while.
                 if i == 0 or delta.days < 3:
-                    db[toPinyin(keyword)].update({'mid': json_data['post']['mid']},
+                    db.posts.update({'mid': json_data['post']['mid']},
                                                  {'$set': {'fwd_count': json_data['post']['fwd_count'],
                                                            'cmd_count': json_data['post']['cmt_count'],
                                                            'like_count': json_data['post']['like_count'],
@@ -151,13 +195,11 @@ def parse_keyword(project, keyword, browser):
             ######################################################################
             print "Complete! Does not continue to process historical data."
             break
-    print "The keyword %s has been parsed." % keyword
+            # print "The keyword %s has been parsed." % keyword.decode('utf-8')
 
 
 def update_keyword(keyword, now):
     print keyword, now
-    pass
-
 
 def parse_item(post, keyword):
     userid, user_name, fwd_count, like_count, content = 0, '', 0, 0, ''
@@ -308,8 +350,9 @@ def parse_post(post, keyword):
             t = post.findAll('a', {'node-type': 'feed_list_item_date'})[1].attrs['title']
         else:
             t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
-    except ValueError, e:
-        t = datetime.datetime.now(TZCHINA)
+    except ValueError:
+        t = str(datetime.datetime.now(TZCHINA))
+
     t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=TZCHINA)
 
     # build the return result in json
@@ -328,12 +371,6 @@ def parse_post(post, keyword):
             "user": {
                 "userid": userid,
                 "username": user_name.encode('utf-8', 'ignore'),
-                "user_verified": user_verified,
-                "location": "",
-                "follower_count": 0,
-                "friend_count": 0,
-                "verified_info": "",
-                "path": []
             },
             "comments": [],
             "replies": []
@@ -354,21 +391,18 @@ def parse_post(post, keyword):
     }
 
     try:
-        print user_name, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content, "\n"
+        print user_name, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
     except UnicodeEncodeError, e:
         print e.message
     return result_json
 
 
-def parse_repost(project, keyword, browser):
-    client = MongoClient('localhost', 27017)
-    db = client[project]
+def parse_repost(db, browser, count):
 
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
-    posts = db[toPinyin(keyword)].find({"fwd_count": {"$gt": 10}}).limit(100)
+    posts = db.posts.find({"fwd_count": {"$gt": 10}}).limit(count)
     for post in posts:
-
         # token url exmple: http://weibo.com/3693685493/CEtFjkHwM?type=repost
         token = mid_to_token(post['mid'])
         # 1. Determine the URL
@@ -376,7 +410,7 @@ def parse_repost(project, keyword, browser):
         print url
 
         # 2. Parsing the data
-        rd = get_response(browser, url, WAITING_TIME)
+        rd = get_response(browser, url, interval_of_simulated_human_click())
         # test
         # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
         # f.write(str(rd))
@@ -397,7 +431,7 @@ def parse_repost(project, keyword, browser):
 
         # update counts when any count number changes
         if cmt_count != post['cmt_count'] or fwd_count != post['fwd_count'] or like_count != post['like_count']:
-            db[toPinyin(keyword)].update({'mid': post['mid']}, {'$set': {
+            db.posts.update({'mid': post['mid']}, {'$set': {
                 'fwd_count': fwd_count,
                 'cmt_count': cmt_count,
                 'like_count': like_count
@@ -408,7 +442,7 @@ def parse_repost(project, keyword, browser):
         i, num_replies, stop_flag = 0, 0, False
         while post['fwd_count'] < fwd_count or num_replies < fwd_count * 0.5:
             mid = []
-            for reply in db[toPinyin(keyword)].find_one({'mid': post['mid']})['replies']:
+            for reply in db.posts.find_one({'mid': post['mid']})['replies']:
                 mid.append(reply['mid'])
 
             # 20% of all the reposts (even more) might be purposedly hidden by the author
@@ -418,7 +452,7 @@ def parse_repost(project, keyword, browser):
             reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[1:]
             for item in reposts:
 
-                item_json = parse_item(item, keyword)
+                item_json = parse_item(item, post['keyword'])
                 if item_json['reply']['mid'] not in mid:
                     # insert user
                     try:
@@ -432,7 +466,7 @@ def parse_repost(project, keyword, browser):
                     t_utc = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
                     delta = item_json['reply']['timestamp'] - t_utc
                     if i == 0 or (post['mid'] not in mid and delta.days < 3):
-                        db[toPinyin(keyword)].update(
+                        db.posts.update(
                             {'mid': post['mid']},
                             {'$push': {'replies': item_json['reply']
                                        }
@@ -445,7 +479,7 @@ def parse_repost(project, keyword, browser):
 
                     # insert post
                     try:
-                        db[toPinyin(keyword)].insert_one(item_json['reply'])
+                        db.posts.insert_one(item_json['reply'])
                     except errors.DuplicateKeyError, e:
                         print "Duplicated post." + e.message
 
@@ -462,28 +496,24 @@ def parse_repost(project, keyword, browser):
                 next_page = ''
             if next_page == '下一页':
                 browser.find_element_by_link_text("下一页").click()
-                # try:
-                #     WebDriverWait(browser, WAITING_TIME).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
-                # except AttributeError, e:
-                #     print e.message
-                # repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_= "WB_feed WB_feed_profile")
-                while True:
-                    time.sleep(20)
-                    # WebDriverWait(browser, WAITING_TIME).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
-                    repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                    # pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
-                    if reposts != repost_panel.findAll("div", {'action-type': 'feed_list_item'}):
-                        break
+                WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
+                repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+                # while True:
+                #     time.sleep(WAITING_TIME)
+                #     # WebDriverWait(browser, WAITING_TIME).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
+                #     repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+                #     # pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
+                #     if reposts != repost_panel.findAll("div", {'action-type': 'feed_list_item'}):
+                #         break
             print "===============page %d============" % i
             i += 1
 
 
-def parse_profile(project, keyword, browser):
-    client = MongoClient('localhost', 27017)
-    db = client[project]
+def parse_info(db, browser, count):
+
     # STEP ONE：already got the latlng from the content
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(100)
+    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(count)
     for user in users:
         if 'location' in user.keys():
             if user['location'] == '其他' or user['location'] == '未知':
@@ -548,7 +578,7 @@ def parse_profile(project, keyword, browser):
         try:
             print user['username'], loc, latlng[0], latlng[1]
         except UnicodeEncodeError, e:
-            print "error" + e.message
+            print "Error: " + e.message
 
 
 def geocode(loc):
@@ -568,22 +598,20 @@ def geocode(loc):
     return [lat, lng]
 
 
-def parse_location(project, keyword, browser):
+def parse_path(db, browser, count):
 
-    client = MongoClient('localhost', 27017)
-    db = client[project]
     # STEP ONE：already got the latlng from the content
-    users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(100)
+    users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(count)
 
     for user in users:
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
         print url
-        rd = get_response(browser, url, WAITING_TIME)
+        rd = get_response(browser, url, interval_of_simulated_human_click())
         # output for testing
-        f = open("../data/parse_location_%s.html" % user['userid'], "w")
-        f.write(rd)
-        f.close()
+        # f = open("../data/parse_location_%s.html" % user['userid'], "w")
+        # f.write(rd)
+        # f.close()
 
         path = []
         if "noUserFeed" not in rd:
@@ -633,6 +661,7 @@ def parse_location(project, keyword, browser):
                 else:
                     lat = 0
                     lng = 0
+
                 if lat == '':
                     lat = 0
                     lng = 0
@@ -644,12 +673,15 @@ def parse_location(project, keyword, browser):
         db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
         # 更新user 的latlng,
         # 对于post的latlng的更新，我认为可以不着急？
-        latlng = [path[0][0], path[0][1]]  # 临时策略
+        try:
+            latlng = [path[0][0], path[0][1]]  # 临时策略
+        except IndexError:
+            latlng = [0, 0]
         db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
 
 
 # hanzi to pinyin
-def toPinyin(keyword):
+def to_pinyin(keyword):
     from pypinyin import lazy_pinyin
     py = lazy_pinyin(unicode(keyword))
     result = ''
@@ -657,11 +689,12 @@ def toPinyin(keyword):
         result += i
     return result
 
-def sendEmail(reciever, msg):
+
+def send_email(reciever, msg):
     import smtplib
     import socket
     sender = 'snsgis@gmail.com'
-    username = 'snsgis@gmail.com'
+    username = sender
 
     msg = '''From: Crawler Server <snsgis@gmail.com>
 To: Administrator <''' + reciever + '''>
@@ -678,13 +711,12 @@ contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
 '''
     # The actual mail send
     try:
-        server = smtplib.SMTP()
-        server.connect('smtp.gmail.com','587')
+        server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
         server.starttls()
         server.login(username, EMAIL_PASSWORD)
         server.sendmail(sender, reciever, msg)
-        server.quit()
+        server.close()
     except socket.gaierror, e:
         print str(e) + "/n error raises when sending E-mails."
 

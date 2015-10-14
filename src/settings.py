@@ -8,38 +8,17 @@ Created on Oct 4, 2015
 @organization: The Ohio State University
 '''
 
-# retweet type
-# 1: reply
-# 2: comment
-# 3: reply to a comment
-# 4: a reply and a comment
+COUNT = 200
 
-
-# status type
-# 0: original
-# 1: reply
-# 2: comments
-
-TOKEN = '2.00UjtoID_vpWMD6803c07a48xPUuYC'
-# TOKEN = '2.00UjtoID_vpWMD1961e78a7fdHoBSB' # 旧梦
-
-COUNT = 50
-COUNT2 = 100
-
-WAITING_TIME = 20
+CONTROL_DAYS = 3
 EMAIL_PASSWORD = 'nanjing1212'
 BAIDU_AK = 'Y4wB8DznamkwhY8RxDiYNSHS'
+CHROME_PATH = 'C:\Program Files (x86)\Google\Chrome\Application\chromedriver.exe'
 
-u1 = "vcjmi41976504@126.com"
-p1 = "zx1987"
-u2 = "hodgpxh2cc@sina.cn"
-p2 = "qk19877"
-u3 = "bcebrierbb@sina.cn"
-p3 = "qk19877"
-u4 = "vdiomngnm771@126.com"
-p4 = "zx1987"
+KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
+KEYWORDS_CLIMATE = ['气候变化', '全球变暖']
 
 # ProjectName
-project_name = "weibo"
-# Variables
-keyword = '政府'
+project = "weibo"
+address = 'localhost'
+port = 27017

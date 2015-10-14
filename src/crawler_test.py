@@ -31,16 +31,17 @@ try:
 
     browser = sina_login(account)
     db = create_database(project, address, port, fresh)
-    for keyword in KEYWORDS[0:5]:
+    for keyword in KEYWORDS[9:10]:
         round_start = datetime.datetime.now()
         parse_keyword(db, keyword, browser)
-        print "the keyword %s has been processed in %d seconds." % (keyword, int((datetime.datetime.now() - round_start).seconds))
+        print "the keyword %s has been processed in %d seconds." % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds))
 # except KeyboardInterrupt, e:
 except:
     print "Program is interrupted."
 finally:
+    browser.close()
     unregister('local', address, port, account)
-    # browser.quit()
+
     print "The keywords have been processed in %d miniutes." % int((datetime.datetime.now() - start).seconds / 60)
 if __name__ == '__main__':
     pass

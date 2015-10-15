@@ -23,6 +23,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 from settings import *
 
@@ -49,7 +50,7 @@ def register(project, address, port):
     account = [account_raw['username'], account_raw['password']]
 
     db.accounts.update({'username': account_raw['username']}, {'$set': {"inused": True}})
-    print "successfully registered."
+    print 'User "%s" has registered.' % account_raw['username']
     return account
 
 
@@ -57,7 +58,8 @@ def unregister(project, address, port, account):
     client = MongoClient(address, port)
     db = client[project]
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
-    print "successfully unregistered."
+    print 'User "%s" has successfully unregistered.' % account[0]
+    return True
 
 
 def create_database(project, address, port, fresh=False):
@@ -80,17 +82,22 @@ def sina_login(account):
     password = account[1]
 
     # chromedriver = CHROME_PATH
-    # os.environ["webdriver.chrome.driver"] = chromedriver
+    # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
 
     browser = webdriver.Firefox()
+    browser.set_window_size(960, 1080)
+    browser.set_window_position(0, 0)
+    browser.set_page_load_timeout(TIMEOUT)
+    browser.set_script_timeout(TIMEOUT)
 
     # visit the sina login page
     browser.get("https://login.sina.com.cn/")
 
+
     # input username
     # user = browser.find_element_by_id('username')
-    user = WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.presence_of_element_located((By.ID, 'username')))
+    user = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'username')))
     user.send_keys(username, Keys.ARROW_DOWN)
 
     # input the passowrd
@@ -102,28 +109,38 @@ def sina_login(account):
     vcode = browser.find_element_by_id('door')
 
     if vcode:
-        code = raw_input("verify code:")
+        code = raw_input("v code:")
         if code:
             vcode.send_keys(code, Keys.ARROW_DOWN)
 
     browser.find_element_by_class_name('smb_btn').click()
+    weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
 
-    weibo_tab = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
-    WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.presence_of_element_located((By.XPATH, weibo_tab)))
-    # browser.find_element_by_xpath(weibo_tab).click()
-    print "logged in successfully."
+    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
+    weibo_tab = browser.find_element_by_xpath(weibo_tab_xpath)
+    weibo_tab.send_keys(Keys.CONTROL + Keys.RETURN)
+
+    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
+    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
+
+    print 'User "%s" has logged in.' % username
     return browser
 
 
 def get_response(browser, url, waiting):
-    browser.get(url)
+    try:
+        browser.get(url)
+    except TimeoutException:
+        browser.get(browser.current_url)
+        print "Web page reloading..."
     time.sleep(waiting)
     rd = browser.page_source
     return rd
 
 
 def interval_of_simulated_human_click():
-    return randint(10, 20)
+    return randint(18, 22)
 
 
 def parse_keyword(db, keyword, browser):
@@ -167,7 +184,7 @@ def parse_keyword(db, keyword, browser):
             except KeyError, e:
                 print "BeautifulSoup does not working properly. " + e.message
             except errors.DuplicateKeyError:
-                print "======Update====="
+                print "===================UPDATING==================="
                 # update
                 # timestamp of a post
                 # 2015-10-07 00:26:00+08:06
@@ -178,7 +195,7 @@ def parse_keyword(db, keyword, browser):
                 #            the reposts might update very often.
                 # (2) delta.days < 3 flow control. Keep the program manageable,
                 #            if not, too many queries if run the program for a while.
-                if i == 0 or delta.days < 3:
+                if i == 0 or delta.days < FLOW_CONTROL_DAYS:
                     db.posts.update({'mid': json_data['post']['mid']},
                                                  {'$set': {'fwd_count': json_data['post']['fwd_count'],
                                                            'cmd_count': json_data['post']['cmt_count'],
@@ -200,6 +217,7 @@ def parse_keyword(db, keyword, browser):
 
 def update_keyword(keyword, now):
     print keyword, now
+
 
 def parse_item(post, keyword):
     userid, user_name, fwd_count, like_count, content = 0, '', 0, 0, ''
@@ -281,7 +299,7 @@ def parse_item(post, keyword):
     }
 
     try:
-        print mid, userid, t, user_name, user_verified, fwd_count, content
+        print t, user_name, user_verified, fwd_count, content
     except UnicodeEncodeError, e:
         print e.message
 
@@ -412,9 +430,9 @@ def parse_repost(db, browser, count):
         # 2. Parsing the data
         rd = get_response(browser, url, interval_of_simulated_human_click())
         # test
-        # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
-        # f.write(str(rd))
-        # f.close()
+        f = open("../data/parse_repost_%s.html" % post['mid'], "w")
+        f.write(str(rd))
+        f.close()
         repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
 
         # 2.1 the counts
@@ -437,76 +455,76 @@ def parse_repost(db, browser, count):
                 'like_count': like_count
             }})
 
-        # 2.2
-        # harvest and flow size control
-        i, num_replies, stop_flag = 0, 0, False
-        while post['fwd_count'] < fwd_count or num_replies < fwd_count * 0.5:
-            mid = []
-            for reply in db.posts.find_one({'mid': post['mid']})['replies']:
-                mid.append(reply['mid'])
+        # 2.2  harvest and flow size control
+        # num_replies = 0
+        stop = False
+        page_list = repost_panel.findAll("a", class_="page")
 
-            # 20% of all the reposts (even more) might be purposedly hidden by the author
-            num_replies = len(mid)
+        if len(page_list) == 0:
+            pages = 1
+            stop = True
+        elif '下一页' in page_list[-1].get_text():
+            pages = int(page_list[-2].get_text())
+        else:
+            pages = 1
+            stop = True
 
-            # Acquring all the repost items in a page, ignore the first one
+        for i in range(pages):
+            # all the replies in the database.
+            mids = [reply['mid'] for reply in db.posts.find_one({'mid': post['mid']})['replies']]
+            # num_replies = len(mid)
             reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[1:]
+            flag = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].get_text()
             for item in reposts:
-
                 item_json = parse_item(item, post['keyword'])
-                if item_json['reply']['mid'] not in mid:
-                    # insert user
+
+                # the time interval between the repost and the original post
+                # the first repost page might have selected replies.
+
+                # stop harvesting based on time
+                t = str(datetime.datetime.now(UTC))
+                t_utc_now = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
+                delta = (t_utc_now - item_json['reply']['timestamp']).days
+                if delta > 10 and i != 0:
+                    stop = True
+                    break
+
+                if item_json['reply']['mid'] not in mids:  # and delta < FLOW_CONTROL_DAYS:
+
+                    # insert a user
                     try:
                         db.users.insert_one(item_json['user'])
-
                     except errors.DuplicateKeyError, e:
                         print "Duplicated User." + e.message
-                    # the time interval between the repost and the original post
-                    # the first repost page might have selected replies.
-                    t = str(post['timestamp'])
-                    t_utc = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
-                    delta = item_json['reply']['timestamp'] - t_utc
-                    if i == 0 or (post['mid'] not in mid and delta.days < 3):
-                        db.posts.update(
-                            {'mid': post['mid']},
-                            {'$push': {'replies': item_json['reply']
-                                       }
-                             }
-                        )
-                    else:
-                        print "already inserted, meaning all the previous replies has been inserted."
-                        stop_flag = True
-                        break
 
-                    # insert post
+                    # insert a reply. In the end, delete the duplicated ones.
+                    db.posts.update(
+                        {'mid': post['mid']},
+                        {'$push': {'replies': item_json['reply']
+                                   }
+                         })
+
+                    # insert the reply as a new post
                     try:
                         db.posts.insert_one(item_json['reply'])
                     except errors.DuplicateKeyError, e:
                         print "Duplicated post." + e.message
 
-            # stop harvesting
-            if stop_flag:
-                print "the reposts of this post have been successfully processed."
+            if stop:
                 break
-
-            # Turn to the next page
-            page_lis = repost_panel.findAll("span", {'action-type': 'feed_list_page'})
-            if len(page_lis) > 0:
-                next_page = page_lis[-1].get_text()
             else:
-                next_page = ''
-            if next_page == '下一页':
-                browser.find_element_by_link_text("下一页").click()
-                WebDriverWait(browser, interval_of_simulated_human_click()).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
-                repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                # while True:
-                #     time.sleep(WAITING_TIME)
-                #     # WebDriverWait(browser, WAITING_TIME).until(EC.staleness_of((By.CLASS_NAME, 'repeat_list')))
-                #     repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                #     # pages_flag = repost_panel.findAll("a", {'action-type': 'feed_list_page'})
-                #     if reposts != repost_panel.findAll("div", {'action-type': 'feed_list_item'}):
-                #         break
-            print "===============page %d============" % i
-            i += 1
+                print "===============page %d============" % i
+                if i != pages - 1:
+                    # browser.find_element_by_xpath('//a[@class="page next S_txt1 S_line1"]/span').click()
+                    # WebDriverWait(browser, TIMEOUT).until(EC.staleness_of(browser.find_element_by_class_name('list_ul')))
+                    # repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+                    while True:
+                        browser.find_element_by_xpath('//a[@class="page next S_txt1 S_line1"]/span').click()
+                        time.sleep(4)
+                        repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+                        if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].get_text():
+                            break
+        print "the reposts of this post have been successfully processed."
 
 
 def parse_info(db, browser, count):
@@ -515,6 +533,7 @@ def parse_info(db, browser, count):
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
     users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(count)
     for user in users:
+        start = datetime.datetime.now()
         if 'location' in user.keys():
             if user['location'] == '其他' or user['location'] == '未知':
                 continue
@@ -579,6 +598,8 @@ def parse_info(db, browser, count):
             print user['username'], loc, latlng[0], latlng[1]
         except UnicodeEncodeError, e:
             print "Error: " + e.message
+        finally:
+            print "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds)
 
 
 def geocode(loc):
@@ -604,6 +625,7 @@ def parse_path(db, browser, count):
     users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(count)
 
     for user in users:
+        start = datetime.datetime.now()
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
         print url
@@ -612,7 +634,6 @@ def parse_path(db, browser, count):
         # f = open("../data/parse_location_%s.html" % user['userid'], "w")
         # f.write(rd)
         # f.close()
-
         path = []
         if "noUserFeed" not in rd:
             # STEP TWO: Assigning location the path api
@@ -677,8 +698,9 @@ def parse_path(db, browser, count):
             latlng = [path[0][0], path[0][1]]  # 临时策略
         except IndexError:
             latlng = [0, 0]
-        db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
-
+        finally:
+            db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+            print "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds)
 
 # hanzi to pinyin
 def to_pinyin(keyword):

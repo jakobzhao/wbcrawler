@@ -15,9 +15,8 @@ from settings import *
 
 start = datetime.datetime.now()
 account = register('local', address, port)
+browser = sina_login(account)
 try:
-
-    browser = sina_login(account)
     db = create_database(project, address, port)
     i = 0
     while True:
@@ -33,7 +32,7 @@ except:
 
 finally:
     unregister('local', address, port, account)
-    print "Cost Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60)
+    print "Time: %d min(s)." % int((datetime.datetime.now() - start).seconds / 60)
 
 if __name__ == '__main__':
     pass

@@ -15,9 +15,9 @@ from settings import *
 
 start = datetime.datetime.now()
 account = register('local', address, port)
-try:
+browser = sina_login(account)
 
-    browser = sina_login(account)
+try:
     db = create_database(project, address, port)
     i = 0
     while True:
@@ -25,7 +25,6 @@ try:
         parse_repost(db, browser, COUNT)
         print "This is the %d rounds. %d reposts will be harvested per round. Time: %d mins." % (i, COUNT, int((datetime.datetime.now() - round_start).seconds / 60))
         i += 1
-# except KeyboardInterrupt, e:
 except:
     print "Program is interrupted."
 finally:

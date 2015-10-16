@@ -17,7 +17,7 @@ from random import randint
 from httplib import BadStatusLine as BS
 
 from bs4 import BeautifulSoup
-from pymongo import MongoClient, errors, DESCENDING
+from pymongo import MongoClient, DESCENDING, errors
 from pytz import timezone
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -25,7 +25,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from PIL import Image
+from PIL import Image, ImageDraw
 from pushbullet import Pushbullet
 
 from settings import *
@@ -34,10 +34,10 @@ ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 TZCHINA = timezone('Asia/Chongqing')
 UTC = timezone('UTC')
+pb = Pushbullet(PB_KEY)
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
 
 def register(project, address, port):
     client = MongoClient(address, port)
@@ -45,15 +45,16 @@ def register(project, address, port):
 
     if db.accounts.find({"inused": False}).count() == 0:
         occupied_msg = "All the accounts are occupied, please try again later."
-        send_email('jakobzhao@gmail.com', occupied_msg)
+        pb.push_note("Lord,", occupied_msg)
         print occupied_msg
         exit(-1)
 
     account_raw = db.accounts.find({"inused": False}).limit(1)[0]
-    account = [account_raw['username'], account_raw['password']]
+    account = [account_raw['username'], account_raw['password'], account_raw['id']]
 
     db.accounts.update({'username': account_raw['username']}, {'$set': {"inused": True}})
-    print 'User "%s" has registered.' % account_raw['username']
+    print 'ROBOT %d has registered.' % account_raw['id']
+
     return account
 
 
@@ -61,7 +62,7 @@ def unregister(project, address, port, account):
     client = MongoClient(address, port)
     db = client[project]
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
-    print 'User "%s" has successfully unregistered.' % account[0]
+    print 'ROBOT %d has successfully unregistered.' % account[3]
     return True
 
 
@@ -86,19 +87,19 @@ def get_vpic(filename):
     im_c.save(filename)
     return im_c
 
+
 def sina_login(account):
+
     username = account[0]
     password = account[1]
+    id = account[2]
 
     # chromedriver = CHROME_PATH
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
 
-    # crop the v-picture
-    # i1 = i.crop((730,270,840,300))
-
     browser = webdriver.Firefox()
-    browser.set_window_size(960, 1080)
+    browser.set_window_size(960, 1060)
     browser.set_window_position(0, 0)
     browser.set_page_load_timeout(TIMEOUT)
     browser.set_script_timeout(TIMEOUT)
@@ -106,7 +107,6 @@ def sina_login(account):
     # visit the sina login page
     login_url = "https://login.sina.com.cn/"
     browser.get(login_url)
-
 
     # input username
     # user = browser.find_element_by_id('username')
@@ -126,33 +126,24 @@ def sina_login(account):
     browser.save_screenshot(filename)
     get_vpic(filename)
 
-    pb = Pushbullet("AX6zQdsp7wkSYtMt3o4LnOymyMLL49RZ")
-
-    with open(filename, "rb") as vpic:
-        file_data = pb.upload_file(vpic, file_name=filename)
-
-    pb.push_file(**file_data)
-    while True:
-        time.sleep(20)
-        if pb.get_pushes()[1][0]['type'] == u"note":
-            txt_code = pb.get_pushes()[1][0]['body']
-            break
     while vcode:
         # code = raw_input("v code:")
-        code = txt_code
+        code = get_vcode_from_pushbullet(filename, "ROBOT %d" % id)
         if code:
             vcode.send_keys(code, Keys.ARROW_DOWN)
+
         browser.find_element_by_class_name('smb_btn').click()
         time.sleep(3)
 
         if browser.current_url == login_url:
             vcode.clear()
             print "Please try again."
+            pb.push_note("Lord,", "Wrong input, please wait and have another try.")
             t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
             filename = '../data/%s-%s.png' % (username, t)
             browser.save_screenshot(filename)
             get_vpic(filename)
-
+            code = get_vcode_from_pushbullet(filename, "ROBOT %d" % id)
             continue
         else:
             break
@@ -167,13 +158,27 @@ def sina_login(account):
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
-    print 'User "%s" has logged in.' % username
+    print 'ROBOT "%d" has logged in.' % id
+    pb.push_note("Lord,", 'Robot %s is working!' % id)
 
     return browser
 
 
-def input_vcode():
-    pb.push_note("Dear Lord:", 'Robot "%s" starts to work!' % username)
+def get_vcode_from_pushbullet(filename, marker):
+    img = Image.open(filename)
+    img = img.resize((200, 80), resample=1)
+    draw = ImageDraw.Draw(img)
+    draw.text([3, 3], marker, fill=(0, 0, 0))
+    img.save(filename)
+
+    with open(filename, "rb") as vpic:
+        file_data = pb.upload_file(vpic, file_name=filename)
+    pb.push_file(**file_data)
+    while True:
+        time.sleep(20)
+        if pb.get_pushes()[1][0]['type'] == u"note":
+            return pb.get_pushes()[1][0]['body']
+
 
 def get_response(browser, url, waiting):
     url_in_use = url
@@ -210,7 +215,7 @@ def parse_keyword(db, keyword, browser):
         print "no related posts have been found."
         return 0
 
-    print "%s: %d pages in total" % (keyword, pages)
+    print "%s: %d pages in total" % (keyword.decode("utf-8"), pages)
 
     stop_flag = False
     for i in range(pages):
@@ -839,37 +844,6 @@ def to_pinyin(keyword):
     for i in py:
         result += i
     return result
-
-
-def send_email(reciever, msg):
-    import smtplib
-    import socket
-    sender = 'snsgis@gmail.com'
-    username = sender
-
-    msg = '''From: Crawler Server <snsgis@gmail.com>
-To: Administrator <''' + reciever + '''>
-Subject: Warning from Crawler Server
-MIME-Version: 1.0
-
-To whom it concerns,
-
-''' + msg + '''
---
-sent from crawler server
-notice: Please don't reply to this email, nobody would notice your email. However, don't hesitate to 
-contact the administrator Bo Zhao <jakobzhao@gmail.com> at your convenience.
-'''
-    # The actual mail send
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.ehlo()
-        server.starttls()
-        server.login(username, EMAIL_PASSWORD)
-        server.sendmail(sender, reciever, msg)
-        server.close()
-    except socket.gaierror, e:
-        print str(e) + "/n error raises when sending E-mails."
 
 
 def base62_encode(num, alphabet=ALPHABET):

@@ -17,20 +17,16 @@ start = datetime.datetime.now()
 account = register('local', address, port)
 browser = sina_login(account)
 
-try:
-    db = create_database(project, address, port)
-    i = 0
-    while True:
-        round_start = datetime.datetime.now()
-        parse_repost(db, browser, COUNT)
-        print "This is the %d rounds. %d reposts will be harvested per round. Time: %d mins." % (i, COUNT, int((datetime.datetime.now() - round_start).seconds / 60))
-        i += 1
-except:
-    print "Program is interrupted."
-finally:
-    browser.close()
-    unregister('local', address, port, account)
-    print "Cost Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60)
+db = create_database(project, address, port)
+i = 0
+while True:
+    round_start = datetime.datetime.now()
+    parse_repost(db, browser, COUNT)
+    print "This is the %d rounds. %d reposts will be harvested per round. Time: %d mins." % (i, COUNT, int((datetime.datetime.now() - round_start).seconds / 60))
+    i += 1
+browser.close()
+unregister('local', address, port, account)
+print "Cost Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60)
 
 if __name__ == '__main__':
     pass

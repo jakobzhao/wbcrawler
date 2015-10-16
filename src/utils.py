@@ -14,6 +14,7 @@ import sys
 import datetime
 import json
 from random import randint
+from httplib import BadStatusLine as BS
 
 from bs4 import BeautifulSoup
 from pymongo import MongoClient, errors, DESCENDING
@@ -24,6 +25,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from PIL import Image
+from pushbullet import Pushbullet
 
 from settings import *
 
@@ -77,6 +80,12 @@ def create_database(project, address, port, fresh=False):
     return db
 
 
+def get_vpic(filename):
+    im = Image.open(filename)
+    im_c = im.crop((740, 260, 840, 300))
+    im_c.save(filename)
+    return im_c
+
 def sina_login(account):
     username = account[0]
     password = account[1]
@@ -85,6 +94,9 @@ def sina_login(account):
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
 
+    # crop the v-picture
+    # i1 = i.crop((730,270,840,300))
+
     browser = webdriver.Firefox()
     browser.set_window_size(960, 1080)
     browser.set_window_position(0, 0)
@@ -92,7 +104,8 @@ def sina_login(account):
     browser.set_script_timeout(TIMEOUT)
 
     # visit the sina login page
-    browser.get("https://login.sina.com.cn/")
+    login_url = "https://login.sina.com.cn/"
+    browser.get(login_url)
 
 
     # input username
@@ -106,14 +119,44 @@ def sina_login(account):
 
     # press click and then the vcode appears.
     browser.find_element_by_class_name('smb_btn').click()
-    vcode = browser.find_element_by_id('door')
+    vcode = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'door')))
+    time.sleep(2)
+    t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
+    filename = '../data/%s-%s.png' % (username, t)
+    browser.save_screenshot(filename)
+    get_vpic(filename)
 
-    if vcode:
-        code = raw_input("v code:")
+    pb = Pushbullet("AX6zQdsp7wkSYtMt3o4LnOymyMLL49RZ")
+
+    with open(filename, "rb") as vpic:
+        file_data = pb.upload_file(vpic, file_name=filename)
+
+    pb.push_file(**file_data)
+    while True:
+        time.sleep(20)
+        if pb.get_pushes()[1][0]['type'] == u"note":
+            txt_code = pb.get_pushes()[1][0]['body']
+            break
+    while vcode:
+        # code = raw_input("v code:")
+        code = txt_code
         if code:
             vcode.send_keys(code, Keys.ARROW_DOWN)
+        browser.find_element_by_class_name('smb_btn').click()
+        time.sleep(3)
 
-    browser.find_element_by_class_name('smb_btn').click()
+        if browser.current_url == login_url:
+            vcode.clear()
+            print "Please try again."
+            t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
+            filename = '../data/%s-%s.png' % (username, t)
+            browser.save_screenshot(filename)
+            get_vpic(filename)
+
+            continue
+        else:
+            break
+
     weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
 
     WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
@@ -125,18 +168,24 @@ def sina_login(account):
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
     print 'User "%s" has logged in.' % username
+
     return browser
 
 
+def input_vcode():
+    pb.push_note("Dear Lord:", 'Robot "%s" starts to work!' % username)
+
 def get_response(browser, url, waiting):
-    try:
-        browser.get(url)
-    except TimeoutException:
-        browser.get(browser.current_url)
-        print "Web page reloading..."
-    time.sleep(waiting)
-    rd = browser.page_source
-    return rd
+    url_in_use = url
+    while True:
+        try:
+            browser.get(url_in_use)
+            time.sleep(waiting)
+            break
+        except TimeoutException:
+            url_in_use = browser.current_url
+            print "Web page refreshing..."
+    return browser.page_source
 
 
 def interval_of_simulated_human_click():
@@ -155,8 +204,14 @@ def parse_keyword(db, keyword, browser):
     # f.close()
 
     # Page number
-    pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
-    print "total pages = %d" % pages
+    try:
+        pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
+    except AttributeError:
+        print "no related posts have been found."
+        return 0
+
+    print "%s: %d pages in total" % (keyword, pages)
+
     stop_flag = False
     for i in range(pages):
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
@@ -170,8 +225,9 @@ def parse_keyword(db, keyword, browser):
         # f.write(rd)
         # f.close()
 
-        # posts in one page
-        print "total posts = %d" % len(posts)
+        start = datetime.datetime.now()
+
+        print "%d posts in Page %d" % (len(posts), pages)
         for post in posts:
             json_data = parse_post(post, keyword)
             try:
@@ -210,9 +266,10 @@ def parse_keyword(db, keyword, browser):
             # important here, for others, I need to design a collecting mechanism.
             update_keyword(keyword, now)
             ######################################################################
-            print "Complete! Does not continue to process historical data."
+            print "Unneccessary to collect historical data."
             break
             # print "The keyword %s has been parsed." % keyword.decode('utf-8')
+        print 'Time for processing page %d:  "%d" sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds))
 
 
 def update_keyword(keyword, now):
@@ -245,14 +302,18 @@ def parse_item(post, keyword):
     except AttributeError, e:
         print e.message
 
-    # counts, comments number does not exist
-    ul = post_content.find('ul', class_='clearfix')
-    for li in ul.findAll('li'):
-        txt = li.get_text().lstrip().rstrip()
-        if "转发" in txt:
-            fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
-    # the last one is the like count.
-    like_count = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
+    # counts：cmt_count does not exist
+    try:
+        ul = post_content.find('ul', class_='clearfix')
+        for li in ul.findAll('li'):
+            txt = li.get_text().lstrip().rstrip()
+            if "转发" in txt:
+                fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
+        # the last one is the like count.
+        like_count = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
+    except AttributeError:
+        print e.message
+
 
     # timestamp
     # t = '2015-10-05 08:51'   timestamp from weibo example
@@ -368,10 +429,10 @@ def parse_post(post, keyword):
             t = post.findAll('a', {'node-type': 'feed_list_item_date'})[1].attrs['title']
         else:
             t = post.find('a', {'node-type': 'feed_list_item_date'}).attrs['title']
+        t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=TZCHINA)
     except ValueError:
         t = str(datetime.datetime.now(TZCHINA))
-
-    t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=TZCHINA)
+        t_china = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=TZCHINA)
 
     # build the return result in json
     result_json = {
@@ -409,18 +470,34 @@ def parse_post(post, keyword):
     }
 
     try:
-        print user_name, " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
+        print user_name.decode('utf-8', 'ignore'), " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
     except UnicodeEncodeError, e:
         print e.message
     return result_json
+
+
+def deleted(mid, db):
+    print "this post has been deleted."
+    t_china = datetime.datetime.now(TZCHINA)
+    db.posts.update(
+        {'mid': mid},
+        {'$set': {
+            'deleted_time': t_china
+        }
+        })
+    return 0
 
 
 def parse_repost(db, browser, count):
 
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
+    # 时间上也要做flow control？需要吗？
     posts = db.posts.find({"fwd_count": {"$gt": 10}}).limit(count)
     for post in posts:
+        if 'deleted_time' in post.keys():
+            "the post in process has been deleted. directly jump to the next repost."
+            continue
         # token url exmple: http://weibo.com/3693685493/CEtFjkHwM?type=repost
         token = mid_to_token(post['mid'])
         # 1. Determine the URL
@@ -428,16 +505,27 @@ def parse_repost(db, browser, count):
         print url
 
         # 2. Parsing the data
+        # 2.0 this post has been deleted.
         rd = get_response(browser, url, interval_of_simulated_human_click())
+        # http://weibo.com/sorry?pagenotfound or the user's home page
+        # http://weibo.com/u/2953377041/home?wvr=5
+        if "home" in browser.current_url or "sorry?pagenotfound" in browser.current_url or "weibo.com/login.php" in browser.current_url:
+            deleted(post['mid'], db)
+            continue
         # test
-        f = open("../data/parse_repost_%s.html" % post['mid'], "w")
-        f.write(str(rd))
-        f.close()
+        # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
+        # f.write(str(rd))
+        # f.close()
+
         repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
 
         # 2.1 the counts
         # counts
-        for li in repost_panel.find("div", class_="WB_handle").findAll("li"):
+        if repost_panel.find("div", class_="WB_feed_handle") == None:
+            deleted(post['mid'], db)
+            continue
+
+        for li in repost_panel.find("div", class_="WB_feed_handle").findAll("li"):
             txt = li.get_text().lstrip().rstrip()
             if "转发" in txt:
                 fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
@@ -457,6 +545,10 @@ def parse_repost(db, browser, count):
 
         # 2.2  harvest and flow size control
         # num_replies = 0
+
+        if repost_panel.find('div', class_="WB_empty") == None:
+            continue
+
         stop = False
         page_list = repost_panel.findAll("a", class_="page")
 
@@ -474,7 +566,7 @@ def parse_repost(db, browser, count):
             mids = [reply['mid'] for reply in db.posts.find_one({'mid': post['mid']})['replies']]
             # num_replies = len(mid)
             reposts = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[1:]
-            flag = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].get_text()
+            flag = repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']
             for item in reposts:
                 item_json = parse_item(item, post['keyword'])
 
@@ -485,7 +577,7 @@ def parse_repost(db, browser, count):
                 t = str(datetime.datetime.now(UTC))
                 t_utc_now = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
                 delta = (t_utc_now - item_json['reply']['timestamp']).days
-                if delta > 10 and i != 0:
+                if delta > FLOW_CONTROL_DAYS and i != 0:
                     stop = True
                     break
 
@@ -513,16 +605,27 @@ def parse_repost(db, browser, count):
             if stop:
                 break
             else:
-                print "===============page %d============" % i
+                print "===============Page %d has been processed.===============" % (i + 1)
                 if i != pages - 1:
                     # browser.find_element_by_xpath('//a[@class="page next S_txt1 S_line1"]/span').click()
                     # WebDriverWait(browser, TIMEOUT).until(EC.staleness_of(browser.find_element_by_class_name('list_ul')))
                     # repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
                     while True:
+                        if 'undefined' in repost_panel.find('div', class_="list_ul"):
+                            stop = True
+                            break
+                        if repost_panel.find("a", class_="page next S_txt1 S_line1") == None:
+                            break
+
                         browser.find_element_by_xpath('//a[@class="page next S_txt1 S_line1"]/span').click()
-                        time.sleep(4)
-                        repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                        if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].get_text():
+                        time.sleep(interval_of_simulated_human_click())
+
+                        try:
+                            repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+                        except BS, e:
+                            print e.message
+                            break
+                        if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']:
                             break
         print "the reposts of this post have been successfully processed."
 
@@ -547,7 +650,11 @@ def parse_info(db, browser, count):
         # f.close()
         tabs = BeautifulSoup(rd, 'html5lib').findAll("div", class_="c")
         for tab in tabs:
-            info = tab.get_text()
+            try:
+                info = tab.get_text()
+            except AttributeError:
+                continue
+
             if '昵称' in info:
                 info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
                 flds = info.split(":")
@@ -585,7 +692,7 @@ def parse_info(db, browser, count):
                 break
 
         db.users.update({'userid': user['userid']}, {'$set': {
-            'gender': unicode(gender),
+            'gender': gender,
             'birthday': birthday,
             'location': loc,
             'verified': verified,
@@ -611,10 +718,10 @@ def geocode(loc):
         lat = loc_json[u'result'][u'location'][u'lat']
         lng = loc_json[u'result'][u'location'][u'lng']
     except ValueError, e:
-        print url
+        # print url
         print e.message + "No JSON object could be decoded"
     except KeyError, e:
-        print url
+        # print url
         print e.message
     return [lat, lng]
 
@@ -623,20 +730,31 @@ def parse_path(db, browser, count):
 
     # STEP ONE：already got the latlng from the content
     users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(count)
+    # modify the default timeout.
+    browser.set_page_load_timeout(4 * TIMEOUT)
 
     for user in users:
+
         start = datetime.datetime.now()
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
-        print url
-        rd = get_response(browser, url, interval_of_simulated_human_click())
+        time.sleep(interval_of_simulated_human_click())
+        print "parsing the routes from %s." % user['username']
+        try:
+            browser.get(url)
+        except TimeoutException:
+            db.users.update({'userid': user['userid']}, {'$set': {'path': [0, 0, datetime.datetime.now(TZCHINA)]}})
+            browser.set_page_load_timeout(TIMEOUT)
+            continue
+
+        rd = browser.page_source
         # output for testing
         # f = open("../data/parse_location_%s.html" % user['userid'], "w")
         # f.write(rd)
         # f.close()
         path = []
         if "noUserFeed" not in rd:
-            # STEP TWO: Assigning location the path api
+            # STEP TWO: Assigning location the path url
             posts = BeautifulSoup(rd, 'html5lib').findAll("div", class_="time_feed_box")
 
             for post in posts:
@@ -691,6 +809,8 @@ def parse_path(db, browser, count):
         else:
             # 提取path
             path.append([0, 0, 0])
+
+        # update user path and latlng
         db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
         # 更新user 的latlng,
         # 对于post的latlng的更新，我认为可以不着急？
@@ -701,6 +821,15 @@ def parse_path(db, browser, count):
         finally:
             db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
             print "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds)
+
+    # change to the original timeout
+    browser.set_page_load_timeout(TIMEOUT)
+
+
+# estimate where the user would be while sending out the post
+def estimate_location():
+    pass
+
 
 # hanzi to pinyin
 def to_pinyin(keyword):

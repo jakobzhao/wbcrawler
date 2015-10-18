@@ -27,10 +27,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from PIL import Image, ImageDraw
 
-from pushbullet import Pushbullet
-
-from decode import *
-from src.settings import TIMEOUT, FLOW_CONTROL_DAYS
+from wbcrawler.decode import *
+from wbcrawler.settings import TIMEOUT, FLOW_CONTROL_DAYS
 
 for line in open("../../keys.conf"):
     if "BAIDU_AK" in line:
@@ -40,7 +38,7 @@ for line in open("../../keys.conf"):
 
 TZCHINA = timezone('Asia/Chongqing')
 UTC = timezone('UTC')
-pb = Pushbullet(PB_KEY)
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -423,7 +421,7 @@ def parse_post(post, keyword):
             userid_tmp = post.find('img', class_='W_face_radius').attrs['usercard']
             userid = int(userid_tmp[3:userid_tmp.index("&")])
         else:
-            userid_tmp = post.find('img', class_='W_face_radius').attrs['src']
+            userid_tmp = post.find('img', class_='W_face_radius').attrs['wbcrawler']
             userid = int(userid_tmp.split("/")[3])
     except KeyError, e:
         print e.message

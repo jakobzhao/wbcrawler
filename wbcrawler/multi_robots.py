@@ -84,7 +84,7 @@ def add_harvestHouses(database, count, ctable):
             house['snd_adm'] = city_name
             house['fst_adm'] = fst_adm
             house['url'] = pq(item)("div.sslaimg a").attr("href").encode('latin-1').decode('gbk')
-            house['picture'] = pq(item)("div.sslaimg a img").attr("src").encode('latin-1').decode('gbk')
+            house['picture'] = pq(item)("div.sslaimg a img").attr("wbcrawler").encode('latin-1').decode('gbk')
             house['name'] = pq(item)("div.sslaimg a img").attr("alt").encode('latin-1', 'ignore').decode('gbk', 'ignore')
             house['developer'] = pq(item)("ul.sslainfor li").eq(3).find("a").text().encode('latin-1', 'ignore').decode('gbk', 'ignore')
             house['price'] = str(pq(item)(".junjia")).encode('latin-1').decode('gbk')

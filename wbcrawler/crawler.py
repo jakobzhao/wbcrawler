@@ -15,7 +15,7 @@ Created on Oct 13, 2015
 # running per 6 hours
 import datetime
 
-from utils import parse_keyword, sina_login, register, unregister, create_database
+from wbcrawler.utils import parse_keyword, sina_login, register, unregister, create_database
 from settings import *
 
 
@@ -28,7 +28,7 @@ from settings import *
 # 任务布置
 # 加入logging system
 
-# src="http://login.sina.com.cn/cgi/pin.php?r=35157368&s=0"
+# wbcrawler="http://login.sina.com.cn/cgi/pin.php?r=35157368&s=0"
 
 fresh = False
 

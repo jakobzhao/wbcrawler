@@ -10,7 +10,7 @@ Created on Oct 10, 2015
 
 import datetime
 
-from src.utils import sina_login, register, unregister, create_database, parse_repost
+from wbcrawler.utils import sina_login, register, unregister, create_database, parse_repost
 from settings import *
 
 start = datetime.datetime.now()

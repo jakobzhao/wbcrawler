@@ -35,7 +35,7 @@ import sys
 
 from pymongo import MongoClient
 
-from settings import *
+from wbcrawler.settings import *
 
 reload(sys)
 sys.setdefaultencoding('utf-8')

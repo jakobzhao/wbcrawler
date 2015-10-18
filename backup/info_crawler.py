@@ -10,8 +10,8 @@ Created on Oct 10, 2015
 
 import datetime
 
-from src.utils.utils import parse_info, sina_login, register, unregister, create_database
-from settings import *
+from wbcrawler.utils.utils import parse_info, sina_login, register, unregister, create_database
+from five.settings import *
 
 start = datetime.datetime.now()
 account = register('local', address, port)

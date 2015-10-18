@@ -26,11 +26,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from PIL import Image, ImageDraw
+
 from pushbullet import Pushbullet
 
-from settings import *
+from decode import *
+from src.settings import TIMEOUT, FLOW_CONTROL_DAYS
 
-ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+for line in open("../../keys.conf"):
+    if "BAIDU_AK" in line:
+        BAIDU_AK = line.split("=")[1]
+    if "PB_KEY" in line:
+        PB_KEY = line.split("=")[1]
 
 TZCHINA = timezone('Asia/Chongqing')
 UTC = timezone('UTC')
@@ -38,6 +44,7 @@ pb = Pushbullet(PB_KEY)
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
 
 def register(project, address, port):
     client = MongoClient(address, port)
@@ -59,10 +66,11 @@ def register(project, address, port):
 
 
 def unregister(project, address, port, account):
+    # {'$set': {'inused': false}}
     client = MongoClient(address, port)
     db = client[project]
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
-    print 'ROBOT %d has successfully unregistered.' % account[3]
+    print 'ROBOT %d has successfully unregistered.' % account[2]
     return True
 
 
@@ -83,17 +91,17 @@ def create_database(project, address, port, fresh=False):
 
 def get_vpic(filename):
     im = Image.open(filename)
-    im_c = im.crop((740, 260, 840, 300))
+    im_c = im.crop((740, 263, 840, 303))
     im_c.save(filename)
     return im_c
 
 
 def sina_login(account):
-
     username = account[0]
     password = account[1]
     id = account[2]
-
+    username = 'vfbkkh154@126.com'
+    password = 'nanjing1212'
     # chromedriver = CHROME_PATH
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
@@ -119,34 +127,35 @@ def sina_login(account):
 
     # press click and then the vcode appears.
     browser.find_element_by_class_name('smb_btn').click()
-    vcode = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'door')))
-    time.sleep(2)
-    t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
-    filename = '../data/%s-%s.png' % (username, t)
-    browser.save_screenshot(filename)
-    get_vpic(filename)
+    if browser.find_element_by_id('door').location != {'y': 0, 'x': 0}:
+        vcode = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'door')))
+        time.sleep(2)
+        t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
+        filename = '../../data/%s-%s.png' % (username, t)
+        browser.save_screenshot(filename)
+        get_vpic(filename)
 
-    while vcode:
         # code = raw_input("v code:")
-        code = get_vcode_from_pushbullet(filename, "ROBOT %d" % id)
-        if code:
-            vcode.send_keys(code, Keys.ARROW_DOWN)
 
-        browser.find_element_by_class_name('smb_btn').click()
-        time.sleep(3)
-
-        if browser.current_url == login_url:
-            vcode.clear()
-            print "Please try again."
-            pb.push_note("Lord,", "Wrong input, please wait and have another try.")
-            t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
-            filename = '../data/%s-%s.png' % (username, t)
-            browser.save_screenshot(filename)
-            get_vpic(filename)
+        while vcode:
             code = get_vcode_from_pushbullet(filename, "ROBOT %d" % id)
-            continue
-        else:
-            break
+            if code:
+                vcode.send_keys(code, Keys.ARROW_DOWN)
+            browser.find_element_by_class_name('smb_btn').click()
+            time.sleep(3)
+
+            if browser.current_url == login_url:
+                vcode.clear()
+                code = ''
+                print "Please try again."
+                pb.push_note("Lord,", "Wrong input, please wait and have another try.")
+                t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
+                filename = '../../data/%s-%s.png' % (username, t)
+                browser.save_screenshot(filename)
+                get_vpic(filename)
+                # code = get_vcode_from_pushbullet(filename, "ROBOT %d" % id)
+            else:
+                break
 
     weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
 
@@ -158,8 +167,8 @@ def sina_login(account):
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
-    print 'ROBOT "%d" has logged in.' % id
-    pb.push_note("Lord,", 'Robot %s is working!' % id)
+    print 'ROBOT %d has logged in.' % id
+    # pb.push_note("Lord,", 'Robot %s is working!' % id)
 
     return browser
 
@@ -168,16 +177,40 @@ def get_vcode_from_pushbullet(filename, marker):
     img = Image.open(filename)
     img = img.resize((200, 80), resample=1)
     draw = ImageDraw.Draw(img)
-    draw.text([3, 3], marker, fill=(0, 0, 0))
+    draw.text([3, 3], marker, fill=(60, 60, 60))
     img.save(filename)
 
     with open(filename, "rb") as vpic:
         file_data = pb.upload_file(vpic, file_name=filename)
     pb.push_file(**file_data)
+    # os.remove(filename)
+    latest = {}
+    stop = False
     while True:
-        time.sleep(20)
-        if pb.get_pushes()[1][0]['type'] == u"note":
-            return pb.get_pushes()[1][0]['body']
+        code = ""
+        time.sleep(15)
+        pushes = pb.get_pushes()[1][0:30]
+        for p in pushes:
+            if 'body' in p.keys():
+                if p['body'].split(" ")[0] == marker.split(" ")[1]:
+                    code = p['body'].split(" ")[1]
+                    stop = True
+                    break
+        if stop:
+            break
+
+            # latest = pb.get_pushes()[1][0]
+            # if latest['type'] == u"note":
+            #     break
+    # p = pb.get_pushes()
+    # for i in p:
+    #     ident=i.get("iden")
+    #     try:
+    #         pb.dismiss_push(ident)
+    #         pb.delete_push(ident)
+    #     except:
+    #         pass
+    return code
 
 
 def get_response(browser, url, waiting):
@@ -198,7 +231,6 @@ def interval_of_simulated_human_click():
 
 
 def parse_keyword(db, keyword, browser):
-
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
     rd = get_response(browser, url, interval_of_simulated_human_click())
     soup = BeautifulSoup(rd, 'html5lib')
@@ -258,11 +290,11 @@ def parse_keyword(db, keyword, browser):
                 #            if not, too many queries if run the program for a while.
                 if i == 0 or delta.days < FLOW_CONTROL_DAYS:
                     db.posts.update({'mid': json_data['post']['mid']},
-                                                 {'$set': {'fwd_count': json_data['post']['fwd_count'],
-                                                           'cmd_count': json_data['post']['cmt_count'],
-                                                           'like_count': json_data['post']['like_count'],
-                                                           }
-                                                  })
+                                    {'$set': {'fwd_count': json_data['post']['fwd_count'],
+                                              'cmd_count': json_data['post']['cmt_count'],
+                                              'like_count': json_data['post']['like_count'],
+                                              }
+                                     })
                 else:
                     stop_flag = True
                     break
@@ -274,7 +306,7 @@ def parse_keyword(db, keyword, browser):
             print "Unneccessary to collect historical data."
             break
             # print "The keyword %s has been parsed." % keyword.decode('utf-8')
-        print 'Time for processing page %d:  "%d" sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds))
+        print 'Time for processing page %d: %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds))
 
 
 def update_keyword(keyword, now):
@@ -493,13 +525,17 @@ def deleted(mid, db):
     return 0
 
 
-def parse_repost(db, browser, count):
-
+def parse_repost(db, browser, posts):
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
     # 时间上也要做flow control？需要吗？
-    posts = db.posts.find({"fwd_count": {"$gt": 10}}).limit(count)
+    count = posts.count()
+    cur = 0
+    print "total posts: %d" % count
+    # Error pymongo.errors.CursorNotFound:
     for post in posts:
+        print "%d posts remain." % (count - cur)
+        cur += 1
         if 'deleted_time' in post.keys():
             "the post in process has been deleted. directly jump to the next repost."
             continue
@@ -523,6 +559,9 @@ def parse_repost(db, browser, count):
         # f.close()
 
         repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
+        if repost_panel == None:
+            deleted(post['mid'], db)
+            continue
 
         # 2.1 the counts
         # counts
@@ -635,12 +674,15 @@ def parse_repost(db, browser, count):
         print "the reposts of this post have been successfully processed."
 
 
-def parse_info(db, browser, count):
-
+def parse_info(db, browser, users):
     # STEP ONE：already got the latlng from the content
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'path': [0, 0, 0]}]}).limit(count)
+    count = users.count()
+    cur = 0
+    print "total users: %d" % count
     for user in users:
+        print "%d users remain." % (count - cur)
+        cur += 1
         start = datetime.datetime.now()
         if 'location' in user.keys():
             if user['location'] == '其他' or user['location'] == '未知':
@@ -731,15 +773,16 @@ def geocode(loc):
     return [lat, lng]
 
 
-def parse_path(db, browser, count):
-
+def parse_path(db, browser, users):
     # STEP ONE：already got the latlng from the content
-    users = db.users.find({'$and': [{'latlng': [0, 0]}, {'path': []}]}).limit(count)
     # modify the default timeout.
     browser.set_page_load_timeout(4 * TIMEOUT)
-
+    count = users.count()
+    cur = 0
+    print "total users: %d" % count
     for user in users:
-
+        print "%d users remain." % (count - cur)
+        cur += 1
         start = datetime.datetime.now()
         # http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
@@ -844,56 +887,3 @@ def to_pinyin(keyword):
     for i in py:
         result += i
     return result
-
-
-def base62_encode(num, alphabet=ALPHABET):
-    """Encode a number in Base X
-
-    `num`: The number to encode
-    `alphabet`: The alphabet to use for encoding
-    """
-    if (num == 0):
-        return alphabet[0]
-    arr = []
-    base = len(alphabet)
-    while num:
-        rem = num % base
-        num = num // base
-        arr.append(alphabet[rem])
-    arr.reverse()
-    return ''.join(arr)
-
-
-def base62_decode(string, alphabet=ALPHABET):
-    """Decode a Base X encoded string into the number
-
-    Arguments:
-    - `string`: The encoded string
-    - `alphabet`: The alphabet to use for encoding
-    """
-    base = len(alphabet)
-    strlen = len(string)
-    num = 0
-
-    idx = 0
-    for char in string:
-        power = (strlen - (idx + 1))
-        num += alphabet.index(char) * (base ** power)
-        idx += 1
-
-    return num
-
-
-def mid_to_token(midint):
-    midint = str(midint)[::-1]
-    size = len(midint) / 7 if len(midint) % 7 == 0 else len(midint) / 7 + 1
-    result = []
-    for i in range(size):
-        s = midint[i * 7: (i + 1) * 7][::-1]
-        s = base62_encode(int(s))
-        s_len = len(s)
-        if i < size - 1 and len(s) < 4:
-            s = '0' * (4 - s_len) + s
-        result.append(s)
-    result.reverse()
-    return ''.join(result)

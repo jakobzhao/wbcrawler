@@ -19,7 +19,7 @@ sys.setdefaultencoding('utf-8')
 from settings import *
 
 client = MongoClient(address, port)
-db = client[project]
+db = client['weibo']
 
 posts = db.posts.find().limit(100)
 

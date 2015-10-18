@@ -10,7 +10,7 @@ Created on Oct 10, 2015
 
 import datetime
 
-from utils import sina_login, register, unregister, create_database, parse_repost
+from src.utils import sina_login, register, unregister, create_database, parse_repost
 from settings import *
 
 start = datetime.datetime.now()
@@ -21,7 +21,8 @@ db = create_database(project, address, port)
 i = 0
 while True:
     round_start = datetime.datetime.now()
-    parse_repost(db, browser, COUNT)
+    posts = db.posts.find({"fwd_count": {"$gt": 10}}).limit(COUNT)
+    parse_repost(db, browser, posts)
     print "This is the %d rounds. %d reposts will be harvested per round. Time: %d mins." % (i, COUNT, int((datetime.datetime.now() - round_start).seconds / 60))
     i += 1
 browser.close()

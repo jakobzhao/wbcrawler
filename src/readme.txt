@@ -20,3 +20,10 @@ info always on
 
 better to be hadoop.
 repost
+10/15/2015
+adding pushbullet notification.
+
+multi-threading!!!
+
+no solution to cookie expiration. sina_login again?
+

@@ -10,7 +10,7 @@ Created on Oct 9, 2015
 
 import datetime
 
-from utils import sina_login, register, unregister, create_database, parse_path
+from src.utils.utils import sina_login, register, unregister, create_database, parse_path
 from settings import *
 
 start = datetime.datetime.now()

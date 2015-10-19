@@ -1,22 +1,22 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 4, 2015
+Created on Oct 18, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
 @organization: Harvard Kennedy School
 '''
 
-from httplib import BadStatusLine as BS
+from httplib import BadStatusLine as bs
 import time
 
 from bs4 import BeautifulSoup
-
 from pymongo import errors
 
-from settings import TIMEOUT, FLOW_CONTROL_DAYS, TZCHINA, UTC
+from settings import TIMEOUT, FLOW_CONTROL_DAYS, UTC
 from utils import *
+from log import *
 from decode import mid_to_token
 from geo import geocode
 from weibo import get_response_as_human
@@ -27,27 +27,22 @@ def parse_keyword(db, keyword, browser):
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
 
-    # Test
-    # f = open("../data/parse_keyword_" + toPinyin(keyword) + ".html", "w")
-    # f.write(rd)
-    # f.close()
-
-    # Page number
+    # calculating the number of pages
     try:
         pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
     except AttributeError:
-        print "no related posts have been found."
+        log(NOTICE, "no related posts have been found.")
         return 0
 
-    print "%s: %d pages in total" % (keyword.decode("utf-8"), pages)
+    log(NOTICE, 'KEYWORD "%s" contains %d pages.' % (keyword.decode("utf-8", "ignore"), pages))
 
     stop_flag = False
     for i in range(pages):
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
-        print url.decode("utf-8")
+        log(NOTICE, 'processing the webpage %s...' % url.decode("utf-8"))
         rd = get_response_as_human(browser, url)
-        soup = BeautifulSoup(rd, 'html5lib')
-        posts = soup.findAll('div', {'action-type': 'feed_list_item'})
+        # soup =
+        posts = BeautifulSoup(rd, 'html5lib').findAll('div', {'action-type': 'feed_list_item'})
 
         # Test
         # f = open("../data/parse_keyword_posts" + toPinyin(keyword) + ".html", "w")
@@ -55,21 +50,20 @@ def parse_keyword(db, keyword, browser):
         # f.close()
 
         start = datetime.datetime.now()
-
-        print "%d posts in Page %d" % (len(posts), pages)
+        log(NOTICE, "%d posts in Page %d" % (len(posts), pages))
         for post in posts:
             json_data = parse_post(post, keyword)
             try:
                 db.users.insert_one(json_data['user'])
-            except errors.DuplicateKeyError, e:
-                print "Duplicated user. " + e.message
+            except errors.DuplicateKeyError:
+                log(NOTICE, 'The user has already been inserted to the database.')
 
             try:
                 db.posts.insert_one(json_data['post'])
             except KeyError, e:
-                print "BeautifulSoup does not working properly. " + e.message
+                log(ERROR, 'BeautifulSoup does not work properly.')
             except errors.DuplicateKeyError:
-                print "===================UPDATING==================="
+                log(NOTICE, 'UPDATING...')
                 # update
                 # timestamp of a post
                 # 2015-10-07 00:26:00+08:06
@@ -95,10 +89,10 @@ def parse_keyword(db, keyword, browser):
             # important here, for others, I need to design a collecting mechanism.
             update_keyword(keyword, now)
             ######################################################################
-            print "Unneccessary to collect historical data."
+            log(NOTICE, "Unneccessary to collect historical data.")
             break
             # print "The keyword %s has been parsed." % keyword.decode('utf-8')
-        print 'Time for processing page %d: %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds))
+        log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
 
 
 def update_keyword(keyword, now):
@@ -116,7 +110,7 @@ def parse_item(post, keyword):
         userid = int(face_icon.find("a").attrs['usercard'][3:])
         user_name = face_icon.find("img").attrs['alt']
     except AttributeError, e:
-        print e.message
+        log(ERROR, e.message, 'parse_item')
 
     # verification
     if post.find('i', class_='W_icon icon_approve') is not None:
@@ -129,20 +123,19 @@ def parse_item(post, keyword):
     try:
         content = post_content.find('span', {'node-type': 'text'}).get_text()
     except AttributeError, e:
-        print e.message
+        log(ERROR, e.message, 'parse_item')
 
     # counts：cmt_count does not exist
     try:
         ul = post_content.find('ul', class_='clearfix')
         for li in ul.findAll('li'):
             txt = li.get_text().lstrip().rstrip()
-            if "转发" in txt:
-                fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
+            if u"转发" in txt:
+                fwd_count = int("0" + txt.replace(u"转发", "").lstrip().rstrip())
         # the last one is the like count.
         like_count = int("0" + ul.findAll("li")[-1].get_text().lstrip().rstrip())
     except AttributeError:
-        print e.message
-
+        log(ERROR, e.message, 'parse_item')
 
     # timestamp
     # t = '2015-10-05 08:51'   timestamp from weibo example
@@ -156,7 +149,7 @@ def parse_item(post, keyword):
         "reply": {
             "keyword": keyword,
             "mid": mid,
-            "content": content.encode('utf-8', 'ignore'),
+            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "timestamp": t_china,
             "fwd_count": fwd_count,
             "cmt_count": 0,
@@ -164,35 +157,38 @@ def parse_item(post, keyword):
             "sentiment": 0,
             "user": {
                 "userid": userid,
-                "username": user_name.encode('utf-8', 'ignore'),
+                "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
                 "user_verified": user_verified,
                 "location": "",
                 "follower_count": 0,
                 "friend_count": 0,
                 "verified_info": "",
+                "latlng": [0, 0],
+                "loc": "",
                 "path": []
             },
             "comments": [],
-            "replies": []
+            "replies": [],
+            "deleted": None
         },
         "user": {
             "userid": userid,
-            "username": user_name.encode('utf-8', 'ignore'),
+            "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "verified": user_verified,
             "verified_info": '',
             "gender": "",
             "birthday": 1900,
             "follower_count": 0,
             "friend_count": 0,
+            "latlng": [0, 0],
+            "loc": "",
             "path": []
         }
     }
-
     try:
-        print t, user_name, user_verified, fwd_count, content
-    except UnicodeEncodeError, e:
-        print e.message
-
+        log(NOTICE, '%s %s %s %d' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t), content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), fwd_count))
+    except UnicodeEncodeError:
+        pass
     return result_json
 
 
@@ -200,7 +196,6 @@ def parse_post(post, keyword):
     userid, fwd_count, cmt_count, like_count, user_name = 0, 0, 0, 0, ''
     # primary key mid
     mid = int(post.attrs['mid'])
-
     # user_name, userid
     try:
         if post.find('img', class_='W_texta W_fb') is not None:
@@ -218,7 +213,7 @@ def parse_post(post, keyword):
             userid_tmp = post.find('img', class_='W_face_radius').attrs['wbcrawler']
             userid = int(userid_tmp.split("/")[3])
     except KeyError, e:
-        print e.message
+        log(ERROR, e.message)
 
     # user verification
     if post.find('a', class_='approve') is None:
@@ -231,23 +226,23 @@ def parse_post(post, keyword):
 
     # counts: relies, cmts, likes
     if post.find('a', {'action-type': 'feed_list_forward'}) is not None:
-        fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace("转发", "0"))
-        cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace("评论", "0"))
+        fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace(u"转发", "0"))
+        cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace(u"评论", "0"))
         like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
     else:
         lis_panel = post.find("ul", class_="feed_action_info feed_action_row4")
         lis = lis_panel.findAll("li")
         for li in lis:
-            if "转发" in li.get_text():
-                fwd_count = int("0" + li.get_text().replace("转发", ""))
-            if "评论" in li.get_text():
-                cmt_count = int("0" + li.get_text().replace("评论", ""))
+            if u"转发" in li.get_text():
+                fwd_count = int("0" + li.get_text().replace(u"转发", ""))
+            if u"评论" in li.get_text():
+                cmt_count = int("0" + li.get_text().replace(u"评论", ""))
             like_count = int("0" + lis[len(lis) - 1].get_text())
 
     # location
     loc, latlng = '', [0, 0]
     if post.find('span', class_='W_btn_tag') is not None:
-        if post.find('span', class_='W_btn_tag').attrs.has_key('title'):
+        if 'title' in post.find('span', class_='W_btn_tag').attrs:
             loc = post.find('span', class_='W_btn_tag').attrs['title']
             latlng = geocode(loc)
 
@@ -268,7 +263,7 @@ def parse_post(post, keyword):
         "post": {
             "mid": mid,
             "keyword": keyword,
-            "content": content.encode('utf-8', 'ignore'),
+            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "timestamp": t_china,
             "fwd_count": fwd_count,
             "cmt_count": cmt_count,
@@ -278,14 +273,15 @@ def parse_post(post, keyword):
             "sentiment": 0,
             "user": {
                 "userid": userid,
-                "username": user_name.encode('utf-8', 'ignore'),
+                "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             },
             "comments": [],
-            "replies": []
+            "replies": [],
+            "deleted": None
         },
         "user": {
             "userid": userid,
-            "username": user_name.encode('utf-8', 'ignore'),
+            "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "verified": user_verified,
             "verified_info": '',
             "gender": "",
@@ -297,45 +293,46 @@ def parse_post(post, keyword):
             "path": []
         }
     }
-
     try:
-        print user_name.decode('utf-8', 'ignore'), " ", t_china, " ", fwd_count, cmt_count, like_count, " ", content
-    except UnicodeEncodeError, e:
-        print e.message
+        log(NOTICE, '%s %s %d %s' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), fwd_count, content.encode('utf-8', 'ignore').decode('utf-8', 'ignore')))
+    except UnicodeEncodeError:
+        pass
     return result_json
 
 
-def deleted(mid, db):
-    print "this post has been deleted."
+def deleted(post, db):
+    mid = post['mid']
     t_china = datetime.datetime.now(TZCHINA)
     db.posts.update(
         {'mid': mid},
         {'$set': {
-            'deleted_time': t_china
+            'deleted': t_china
         }
         })
+    log(NOTICE, "This post has been deleted by either the author or the censors.")
     return 0
 
 
 def parse_repost(db, browser, posts):
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
-    # 时间上也要做flow control？需要吗？
-    count = posts.count()
+    count = posts._Cursor__limit
+    all = posts.count()
+    start_from = posts._Cursor__skip
     cur = 0
-    print "total posts: %d" % count
+    log(NOTICE, "Processing %d of %d posts, start from #%d." % (count, all, start_from))
     # Error pymongo.errors.CursorNotFound:
     for post in posts:
-        print "%d posts remain." % (count - cur)
-        cur += 1
-        if 'deleted_time' in post.keys():
-            "the post in process has been deleted. directly jump to the next repost."
-            continue
         # token url exmple: http://weibo.com/3693685493/CEtFjkHwM?type=repost
-        token = mid_to_token(post['mid'])
         # 1. Determine the URL
+        token = mid_to_token(post['mid'])
         url = "http://weibo.com/%s/%s?type=repost" % (str(post['user']['userid']), token)
-        print url
+        log(NOTICE, "Parsing the repost at %s, %d posts left." % (url, (count - cur)))
+        cur += 1
+
+        # if 'deleted' != None:
+        #    log(NOTICE, "The repost at %s has been deleted." % url)
+        #    continue
 
         # 2. Parsing the data
         # 2.0 this post has been deleted.
@@ -343,7 +340,8 @@ def parse_repost(db, browser, posts):
         # http://weibo.com/sorry?pagenotfound or the user's home page
         # http://weibo.com/u/2953377041/home?wvr=5
         if "home" in browser.current_url or "sorry?pagenotfound" in browser.current_url or "weibo.com/login.php" in browser.current_url:
-            deleted(post['mid'], db)
+            deleted(post, db)
+            log(NOTICE, "The repost at %s has been deleted." % url)
             continue
         # test
         # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
@@ -352,21 +350,23 @@ def parse_repost(db, browser, posts):
 
         repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
         if repost_panel == None:
-            deleted(post['mid'], db)
+            # deleted(post, db)
+            log(NOTICE, "The repost at %s has been deleted." % url)
             continue
 
         # 2.1 the counts
         # counts
         if repost_panel.find("div", class_="WB_feed_handle") == None:
-            deleted(post['mid'], db)
+            # deleted(post, db)
+            log(NOTICE, "The repost at %s has been deleted." % url)
             continue
 
         for li in repost_panel.find("div", class_="WB_feed_handle").findAll("li"):
             txt = li.get_text().lstrip().rstrip()
-            if "转发" in txt:
-                fwd_count = int("0" + txt.replace("转发", "").lstrip().rstrip())
-            if "评论" in txt:
-                cmt_count = int("0" + txt.replace("评论", "").lstrip().rstrip())
+            if u"转发" in txt:
+                fwd_count = int("0" + txt.replace(u"转发", "").lstrip().rstrip())
+            if u"评论" in txt:
+                cmt_count = int("0" + txt.replace(u"评论", "").lstrip().rstrip())
         # the last one is the like count.
         like_txt = repost_panel.find("div", class_="WB_handle").findAll("li")[-1].get_text().lstrip().rstrip()
         like_count = int("0" + like_txt)
@@ -381,8 +381,8 @@ def parse_repost(db, browser, posts):
 
         # 2.2  harvest and flow size control
         # num_replies = 0
-
         if repost_panel.find('div', class_="WB_empty") == None:
+            log(NOTICE, "No reposts can be seen.")
             continue
 
         stop = False
@@ -391,7 +391,7 @@ def parse_repost(db, browser, posts):
         if len(page_list) == 0:
             pages = 1
             stop = True
-        elif '下一页' in page_list[-1].get_text():
+        elif u'下一页' in page_list[-1].get_text():
             pages = int(page_list[-2].get_text())
         else:
             pages = 1
@@ -422,10 +422,13 @@ def parse_repost(db, browser, posts):
                     # insert a user
                     try:
                         db.users.insert_one(item_json['user'])
-                    except errors.DuplicateKeyError, e:
-                        print "Duplicated User." + e.message
+                    except errors.DuplicateKeyError:
+                        log(NOTICE, 'This user has already been inserted')
 
                     # insert a reply. In the end, delete the duplicated ones.
+                    if post['deleted'] != None:
+                        db.posts.update({'deleted': None})
+
                     db.posts.update(
                         {'mid': post['mid']},
                         {'$push': {'replies': item_json['reply']
@@ -436,12 +439,12 @@ def parse_repost(db, browser, posts):
                     try:
                         db.posts.insert_one(item_json['reply'])
                     except errors.DuplicateKeyError, e:
-                        print "Duplicated post." + e.message
+                        log(NOTICE, 'This post has already been inserted.')
 
             if stop:
                 break
             else:
-                print "===============Page %d has been processed.===============" % (i + 1)
+                log(NOTICE, 'Processing the page %d' % (i + 1))
                 if i != pages - 1:
                     # browser.find_element_by_xpath('//a[@class="page next S_txt1 S_line1"]/span').click()
                     # WebDriverWait(browser, TIMEOUT).until(EC.staleness_of(browser.find_element_by_class_name('list_ul')))
@@ -458,26 +461,28 @@ def parse_repost(db, browser, posts):
 
                         try:
                             repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                        except BS, e:
+                        except bs, e:
                             log(ERROR, e.message)
                             break
                         if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']:
                             break
-        print "the reposts of this post have been successfully processed."
+        log(NOTICE, 'All reposts of this post has been processed.')
 
 
 def parse_info(db, browser, users):
     # STEP ONE：already got the latlng from the content
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
-    count = users.count()
+    count = users._Cursor__limit
+    all = users.count()
+    start_from = users._Cursor__skip
     cur = 0
-    log(NOTICE, "total users: %d" % count)
+    log(NOTICE, " Processing %d of %d users, start from #%d." % (count, all, start_from))
     for user in users:
         log(NOTICE, "%d users remain." % (count - cur))
         cur += 1
         start = datetime.datetime.now()
         if 'location' in user.keys():
-            if user['location'] == '其他' or user['location'] == '未知':
+            if user['location'] == u'其他' or user['location'] == u'未知':
                 continue
         url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response_as_human(browser, url, 20)
@@ -495,38 +500,39 @@ def parse_info(db, browser, users):
             except AttributeError:
                 continue
 
-            if '昵称' in info:
-                info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
+            if u'昵称' in info:
+                info = info.replace(u'认证信息：', u'认信:').replace(u'感情状况：', u'感情:').replace(u'性取向：', u'取向:')
                 flds = info.split(":")
                 i = 0
                 while i < len(flds) - 1:
-                    if '性别' in flds[i]:
-                        if '男' in flds[i + 1]:
+                    if u'性别' in flds[i]:
+                        if u'男' in flds[i + 1]:
                             gender = 'M'
                         else:
                             gender = 'F'
                             # print gender
-                    if '地区' in flds[i]:
+                    if u'地区' in flds[i]:
                         loc = flds[i + 1][:-2]
-                        loc = loc.replace("海外 ", "")
-                    if '认信' in flds[i]:
+                        loc = loc.replace(u"海外 ", "")
+                    if u'认信' in flds[i]:
                         verified = True
                         verified_info = flds[i + 1][:-2]
-                        verified_info = verified_info.replace('官方微博', '')
+                        verified_info = verified_info.replace(u'官方微博', '')
                         # print verified_info
-                    if '生日' in flds[i]:
+                    if u'生日' in flds[i]:
                         birthday = flds[i + 1][:-2]
                         # print birthday
                     i += 1
 
                 # location could be the very last one
-                if '地区' in flds[len(flds) - 2]:
+                if u'地区' in flds[len(flds) - 2]:
                     loc = flds[len(flds) - 1]
                 # the value of 地区 could be 未知, 其他.
-                if '地区' not in info:
-                    loc = "未知"
-                elif loc == "其他":
-                    pass
+                if u'地区' not in info:
+                    loc = u"未知"
+                    latlng = [-1, -1]
+                elif loc == u"其他":
+                    latlng = [-1, -1]
                 else:
                     latlng = geocode(loc)
                 break
@@ -534,28 +540,30 @@ def parse_info(db, browser, users):
         db.users.update({'userid': user['userid']}, {'$set': {
             'gender': gender,
             'birthday': birthday,
-            'location': loc,
+            'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             'verified': verified,
-            'verified_info': verified_info,
+            'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             'latlng': latlng
         }})
 
         # print unicode(gender), birthday, verified_info, loc, latlng[0], latlng[1]
         try:
-            print user['username'], loc, latlng[0], latlng[1]
-        except UnicodeEncodeError, e:
-            print "Error: " + e.message
+            log(NOTICE, '%s %s latlng (%f, %f).' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), latlng[0], latlng[1]))
+        except UnicodeEncodeError:
+            pass
         finally:
-            print "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds)
+            log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
 
 
 def parse_path(db, browser, users):
     # STEP ONE：already got the latlng from the content
     # modify the default timeout. Usually, the func parse_path takes longer than other funcs.
     browser.set_page_load_timeout(4 * TIMEOUT)
-    count = users.count()
+    count = users._Cursor__limit
+    all = users.count()
+    start_from = users._Cursor__skip
     cur = 0
-    log(NOTICE, "total users: %d" % count)
+    log(NOTICE, "Processing %d of %d users, start from #%d." % (count, all, start_from))
     for user in users:
         log(NOTICE, "%d users remain." % (count - cur))
         cur += 1
@@ -583,11 +591,11 @@ def parse_path(db, browser, users):
                     t3 = t2[1].split(":")
                     t_china = datetime.datetime(int(t1[0]), int(t1[1]), int(t2[0]), int(t3[0]), int(t3[1]), 0, 0,
                                                 tzinfo=TZCHINA)
-                elif "月" in t:
+                elif u"月" in t:
                     # t1 = t.split("æœˆ")[0]
                     # t2 = t.split("æœˆ")[1].split("æ—¥")[0]
-                    t1 = t.split("月")[0]
-                    t2 = t.split("月")[1].split("日")[0]
+                    t1 = t.split(u"月")[0]
+                    t2 = t.split(u"月")[1].split(u"日")[0]
                     t3 = t.split(" ")[1].split(":")
                     t_china = datetime.datetime(2015, int(t1), int(t2), int(t3[0]), int(t3[1]), 0, 0, tzinfo=TZCHINA)
                 else:
@@ -621,7 +629,10 @@ def parse_path(db, browser, users):
                 if lat == '':
                     lat = 0
                     lng = 0
-                print user['username'], lat, lng, t_china
+                try:
+                    log(NOTICE, '%s %s latlng (%f, %f)' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), lat, lng))
+                except UnicodeEncodeError:
+                    pass
                 path.append([float(lat), float(lng), t_china])
         else:
             path.append([0, 0, 0])
@@ -633,9 +644,9 @@ def parse_path(db, browser, users):
         try:
             latlng = [path[0][0], path[0][1]]  # 临时策略
         except IndexError:
-            latlng = [0, 0]
+            latlng = [-1, -1]
         finally:
             db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
-            print "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds)
+            log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
     # change to the original timeout
     browser.set_page_load_timeout(TIMEOUT)

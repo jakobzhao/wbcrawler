@@ -5,35 +5,28 @@ Created on Oct 18, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
-@organization: The Ohio State University
+@organization: Harvard Kennedy School
 '''
 
 import datetime
 
-from settings import TZCHINA, pb
+from pushbullet import Pushbullet
 
-NOTICE = 0
-RECORD = 1
-WARNING = 2
-ERROR = 3
-FATALITY = 4
+from settings import TZCHINA
+from settings import PB_KEY
 
-for line in open("../../keys.conf"):
-    if "BAIDU_AK" in line:
-        BAIDU_AK = line.split("=")[1]
-    if "PB_KEY" in line:
-        PB_KEY = line.split("=")[1]
+NOTICE, RECORD, WARNING, ERROR, FATALITY = 0, 1, 2, 3, 4
+pb = Pushbullet(PB_KEY)
 
 
-def log(level, output):
-    t = datetime.datetime.now(TZCHINA)
+def log(level, output, func_name=''):
+    t = datetime.datetime.now(TZCHINA).strftime('%Y-%m-%d %H:%M')
     if level == NOTICE:
-        print output
-        print ('[NOTICE] %d-%d-%d %d:%d] %s' % (t.year, t.month, t.day, t.hour, t.minute, output))
+        print ('[NOTICE] %s %s' % (t, output))
     elif level == WARNING:
-        print output
+        print ('[NOTICE] %s in func %s %s' % (t, func_name, output))
     elif ERROR:
-        print output
+        print ('[NOTICE] %s in func %s %s' % (t, func_name, output))
     else:
-        pb.push_note("Lord,", output)
-        print output
+        pb.push_note("Lord", output, func_name)
+        print ('[FATAL] %s %s' % (t, output))

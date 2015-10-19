@@ -1,47 +1,49 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 13, 2015
+Created on Oct 18, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
 @organization: Harvard Kennedy School
 '''
 
-
-# 16.7 minutes per keyword in average
-# so, if there are 10 keywords, 2 hour and 50 minutes in total
-# I will suggest to implement this script every six hour per day.
-# running per 6 hours
 import datetime
 
 from wbcrawler.parser import parse_keyword
 from wbcrawler.weibo import sina_login
-from wbcrawler.settings import *
-
+from wbcrawler.database import register, unregister, create_database
+from wbcrawler.log import *
 
 # First Round: 20 + 88 mins: 2 hours
 # Second Round: 76 mins
 # a following Round: 65 mins
 # 10/15/2015 64 mins
 
-# 剔除重复项
-# 任务布置
-# 加入logging system
 
-# wbcrawler="http://login.sina.com.cn/cgi/pin.php?r=35157368&s=0"
+project = 'five'
+# project = 'climate'
+address = 'localhost'
+port = 27017
 
-fresh = False
+
+# KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
+# KEYWORDS_CLIMATE = ['气候变化', '全球变暖']
+# KEYWORDS_FIVE = ['五中全会']
+
+# KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
+KEYWORDS = ['五中全会']
+#KEYWORDS = ['气候变化', '全球变暖']
 
 start = datetime.datetime.now()
 account = register('local', address, port)
 browser = sina_login(account)
 
-db = create_database(project, address, port, fresh)
+db = create_database(project, address, port)
 for keyword in KEYWORDS:
     round_start = datetime.datetime.now()
     parse_keyword(db, keyword, browser)
-    print 'The keyword "%s" has been processed in %d seconds.' % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds))
+    log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
 # except KeyboardInterrupt, e:
 try:
     browser.close()
@@ -49,6 +51,6 @@ except:
     pass
 unregister('local', address, port, account)
 
-print 'The keywords have been processed in "%d" minutes.' % int((datetime.datetime.now() - start).seconds / 60)
+log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))
 if __name__ == '__main__':
     pass

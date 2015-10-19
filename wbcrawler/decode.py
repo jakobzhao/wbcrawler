@@ -1,14 +1,15 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 4, 2015
+Created on Oct 18, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
-@organization: The Ohio State University
+@organization: Harvard Kennedy School
 '''
 
 ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 
 def base62_encode(num, alphabet=ALPHABET):
     """Encode a number in Base X

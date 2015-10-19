@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 4, 2015
+Created on Oct 18, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
@@ -16,8 +16,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
-from pymongo import MongoClient, DESCENDING
-
 from PIL import Image, ImageDraw
 
 from utils import get_interval_as_human
@@ -45,58 +43,14 @@ def get_response_as_human(browser, url, page_reload=True):
             browser.get(url_raw)
             time.sleep(waiting)
         except TimeoutException:
-            log(NOTICE, 'a timeout warning.')
+            log(WARNING, 'timeout', 'get_response_as_human')
     return response_data
-
-
-def register(project, address, port):
-    client = MongoClient(address, port)
-    db = client[project]
-
-    if db.accounts.find({"inused": False}).count() == 0:
-        occupied_msg = "All the accounts are occupied, please try again later."
-        log(FATALITY, occupied_msg)
-        exit(-1)
-
-    account_raw = db.accounts.find({"inused": False}).limit(1)[0]
-    account = [account_raw['username'], account_raw['password'], account_raw['id']]
-
-    db.accounts.update({'username': account_raw['username']}, {'$set': {"inused": True}})
-    print 'ROBOT %d has registered.' % account_raw['id']
-
-    return account
-
-
-def unregister(project, address, port, account):
-    # {'$set': {'inused': false}}
-    client = MongoClient(address, port)
-    db = client[project]
-    db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
-    log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
-    return True
-
-
-def create_database(project, address, port, fresh=False):
-    client = MongoClient(address, port)
-    db = client[project]
-    posts = db.posts
-    users = db.users
-
-    if fresh:
-        db.posts.delete_many({})
-        db.users.delete_many({})
-
-    posts.create_index([("mid", DESCENDING)], unique=True)
-    users.create_index([("userid", DESCENDING)], unique=True)
-    return db
 
 
 def sina_login(account):
     username = account[0]
     password = account[1]
     id = account[2]
-    username = 'vfbkkh154@126.com'
-    password = 'nanjing1212'
     # chromedriver = CHROME_PATH
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
@@ -142,8 +96,7 @@ def sina_login(account):
             if browser.current_url == login_url:
                 vcode.clear()
                 code = ''
-                print "Please try again."
-                pb.push_note("Lord,", "Wrong input, please wait and have another try.")
+                log(FATALITY, 'Wrong input, please wait and have another try.')
                 t = str(datetime.datetime.now(TZCHINA).time()).split(".")[0].replace(':', '-')
                 filename = '../../data/%s-%s.png' % (username, t)
                 browser.save_screenshot(filename)
@@ -162,8 +115,7 @@ def sina_login(account):
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
-    print 'ROBOT %d has logged in.' % id
-    # pb.push_note("Lord,", 'Robot %s is working!' % id)
+    log(NOTICE, 'ROBOT %d has logged in.' % id)
 
     return browser
 

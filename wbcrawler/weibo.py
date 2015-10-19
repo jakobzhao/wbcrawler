@@ -9,6 +9,7 @@ Created on Oct 18, 2015
 '''
 
 import time
+import platform
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -16,6 +17,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from pyvirtualdisplay import Display
 from PIL import Image, ImageDraw
 
 from utils import get_interval_as_human
@@ -54,12 +56,14 @@ def sina_login(account):
     # chromedriver = CHROME_PATH
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
+    if "Linux" in platform.platform():
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
     browser = webdriver.Firefox()
     browser.set_window_size(960, 1060)
     browser.set_window_position(0, 0)
     browser.set_page_load_timeout(TIMEOUT)
     browser.set_script_timeout(TIMEOUT)
-
     # visit the sina login page
     login_url = "https://login.sina.com.cn/"
     browser.get(login_url)

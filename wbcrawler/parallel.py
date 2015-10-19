@@ -13,7 +13,6 @@ from multiprocessing.dummy import Lock
 import socket
 
 from pymongo import MongoClient
-
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
 from wbcrawler.database import register, unregister
@@ -26,6 +25,7 @@ from wbcrawler.settings import MIN_FWD_COUNT
 start = datetime.datetime.now()
 utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=FLOW_CONTROL_DAYS)
 lock = Lock()
+
 
 # calculate the sum of robots in each category
 def create_robots(rr, ir, pr, project, address="localhost", port=27017):
@@ -134,13 +134,13 @@ def parallel_crawling(rr, ir, pr, project="local", address="localhost", port=270
     except TypeError, e:
         log(FATALITY, e.message, 'parallel_crawlling')
     except StaleElementReferenceException:
-        log(FATALITY, "StateElementReferenceException: Too many robots. ", 'parallel_crawlling')
+        log(FATALITY, "StateElementReferenceException: Too many robots", 'parallel_crawlling')
     except TimeoutException:
-        log(FATALITY, "TimeoutException: Too many robots. ", 'parallel_crawlling')
+        log(FATALITY, "TimeoutException: Too many robots", 'parallel_crawlling')
     except socket.error:
-        log(FATALITY, "SocketError: The browser is forced to close.", 'parallel_crawlling')
+        log(FATALITY, "SocketError: The browser is forced to close", 'parallel_crawlling')
     except WindowsError:
-        log(FATALITY, "WindowsError: The browser is forced to close.", 'parallel_crawlling')
+        log(FATALITY, "WindowsError: The browser is forced to close", 'parallel_crawlling')
 
     # close the pool and wait for the work to finish
     pool.close()

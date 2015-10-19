@@ -8,8 +8,6 @@ Created on Oct 18, 2015
 @organization: Harvard Kennedy School
 '''
 
-import datetime
-
 from wbcrawler.parser import parse_keyword
 from wbcrawler.weibo import sina_login
 from wbcrawler.database import register, unregister, create_database
@@ -30,10 +28,10 @@ port = 27017
 # KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
 # KEYWORDS_CLIMATE = ['气候变化', '全球变暖']
 # KEYWORDS_FIVE = ['五中全会']
-
 # KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
+# KEYWORDS = ['气候变化', '全球变暖']
+
 KEYWORDS = ['五中全会']
-#KEYWORDS = ['气候变化', '全球变暖']
 
 start = datetime.datetime.now()
 account = register('local', address, port)

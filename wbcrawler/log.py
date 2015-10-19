@@ -24,9 +24,9 @@ def log(level, output, func_name=''):
     if level == NOTICE:
         print ('[NOTICE] %s %s' % (t, output))
     elif level == WARNING:
-        print ('[NOTICE] %s in func %s %s' % (t, func_name, output))
+        print ('[NOTICE] %s in func %s %s.' % (t, func_name, output))
     elif ERROR:
-        print ('[NOTICE] %s in func %s %s' % (t, func_name, output))
+        print ('[NOTICE] %s in func %s %s.' % (t, func_name, output))
     else:
         pb.push_note("Lord", output, func_name)
-        print ('[FATAL] %s %s' % (t, output))
+        print ('[FATAL] %s %s.' % (t, output))

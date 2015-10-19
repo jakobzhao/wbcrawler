@@ -9,7 +9,7 @@ Created on Oct 16, 2015
 '''
 
 from multiprocessing.dummy import Pool as ThreadPool
-import datetime
+from multiprocessing.dummy import Lock
 import socket
 
 from pymongo import MongoClient
@@ -25,7 +25,7 @@ from wbcrawler.settings import MIN_FWD_COUNT
 
 start = datetime.datetime.now()
 utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=FLOW_CONTROL_DAYS)
-
+lock = Lock()
 
 # calculate the sum of robots in each category
 def create_robots(rr, ir, pr, project, address="localhost", port=27017):
@@ -59,7 +59,8 @@ def repost_crawling(rbt):
     rr = rbt['count']
     client = MongoClient(address, port)
     db = client[project]
-    browser = sina_login(rbt['account'])
+    with lock:
+        browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": MIN_FWD_COUNT}}).count()
@@ -85,9 +86,9 @@ def info_crawling(rbt):
     browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
-        count = db.users.find({'latlng': {"$ne": [-1, -1]}}).count()
+        count = db.users.find({'latlng': [0, 0]}).count()
         slc = count / ir
-        users = db.users.find({'latlng': {"$ne": [-1, -1]}}).skip(slc * rbt['id']).limit(slc)
+        users = db.users.find({'latlng': [0, 0]}).skip(slc * rbt['id']).limit(slc)
         parse_info(db, browser, users)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
@@ -131,13 +132,15 @@ def parallel_crawling(rr, ir, pr, project="local", address="localhost", port=270
     try:
         pool.map(crawling_job, robots)
     except TypeError, e:
-        log(FATALITY, e.message)
-    except StaleElementReferenceException, e:
-        log(FATALITY, "Too many robots. " + e.message)
-    except TimeoutException, e:
-        log(FATALITY, "Too many robots. " + e.message)
-    except socket.error, e:
-        log(FATALITY, "I close the browser. " + e.message)
+        log(FATALITY, e.message, 'parallel_crawlling')
+    except StaleElementReferenceException:
+        log(FATALITY, "StateElementReferenceException: Too many robots. ", 'parallel_crawlling')
+    except TimeoutException:
+        log(FATALITY, "TimeoutException: Too many robots. ", 'parallel_crawlling')
+    except socket.error:
+        log(FATALITY, "SocketError: The browser is forced to close.", 'parallel_crawlling')
+    except WindowsError:
+        log(FATALITY, "WindowsError: The browser is forced to close.", 'parallel_crawlling')
 
     # close the pool and wait for the work to finish
     pool.close()

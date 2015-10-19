@@ -11,7 +11,7 @@ Created on Oct 9, 2015
 import datetime
 
 from wbcrawler.utils.utils import sina_login, register, unregister, create_database, parse_path
-from five.settings import *
+from backup.five.settings import *
 
 start = datetime.datetime.now()
 account = register('local', address, port)

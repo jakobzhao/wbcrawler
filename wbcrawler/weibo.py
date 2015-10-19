@@ -54,7 +54,6 @@ def sina_login(account):
     # chromedriver = CHROME_PATH
     # os.environ["webdr.chrome.driver"] = chromedriver
     # browser = webdriver.Chrome(chromedriver)
-
     browser = webdriver.Firefox()
     browser.set_window_size(960, 1060)
     browser.set_window_position(0, 0)

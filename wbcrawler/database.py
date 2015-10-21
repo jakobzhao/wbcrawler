@@ -34,7 +34,9 @@ def register(project, address, port):
 def unregister(project, address, port, account):
     # {'$set': {'inused': false}}
     client = MongoClient(address, port)
+
     db = client[project]
+
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
     return True
@@ -42,6 +44,9 @@ def unregister(project, address, port, account):
 
 def create_database(project, address, port, fresh=False):
     client = MongoClient(address, port)
+    ##client.the_database.authenticate('bo', 'f', source="C:\MongoDB\data")
+    # client = MongoClient('mongodb://bo:f@localhost:27017')
+    # db.add_user('bo','f')
     db = client[project]
     posts = db.posts
     users = db.users

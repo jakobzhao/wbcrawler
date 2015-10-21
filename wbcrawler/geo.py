@@ -34,6 +34,8 @@ def geocode(loc):
     return [lat, lng]
 
 
-# estimate where the user would be while sending out the post
-def estimate_location():
+# Estimate where a post was sent.
+def estimate_location(user):
+    db.
+    path
     pass

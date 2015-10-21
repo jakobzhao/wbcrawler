@@ -511,7 +511,7 @@ def parse_info(db, browser, users):
                         else:
                             gender = 'F'
                             # print gender
-                    if u'地区' in flds[i]:
+                    if u'地区' in flds[i] and user['loc'] == '':  # it is possible the location has already been obatained during the first round.
                         loc = flds[i + 1][:-2]
                         loc = loc.replace(u"海外 ", "")
                     if u'认信' in flds[i]:
@@ -524,18 +524,18 @@ def parse_info(db, browser, users):
                         # print birthday
                     i += 1
 
-                # location could be the very last one
-                if u'地区' in flds[len(flds) - 2]:
+                # location info could be the very last line.
+                if u'地区' in flds[len(flds) - 2] and user['loc'] == '':
                     loc = flds[len(flds) - 1]
                 # the value of 地区 could be 未知, 其他.
-                if u'地区' not in info:
+                # now having the loc value,
+                if u'地区' not in info and user['loc'] == '':
                     loc = u"未知"
                     latlng = [-1, -1]
                 elif loc == u"其他":
                     latlng = [-1, -1]
                 else:
                     latlng = geocode(loc)
-                break
 
         db.users.update({'userid': user['userid']}, {'$set': {
             'gender': gender,

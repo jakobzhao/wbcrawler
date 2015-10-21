@@ -60,7 +60,7 @@ def sina_login(account):
         display = Display(visible=0, size=(1024, 768))
         display.start()
     browser = webdriver.Firefox()
-    browser.set_window_size(960, 1060)
+    browser.set_window_size(960, 1050)
     browser.set_window_position(0, 0)
     browser.set_page_load_timeout(TIMEOUT)
     browser.set_script_timeout(TIMEOUT)

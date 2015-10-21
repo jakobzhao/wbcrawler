@@ -12,10 +12,10 @@ Created on Oct 16, 2015
 from wbcrawler.parallel import parallel_crawling
 
 # variables
-project = 'five'
+project = 'weibo'
 address = "localhost"
 port = 27017
-repost, info, path = 7, 0, 0
+repost, info, path = 0, 0, 10
 
 # funcs
 parallel_crawling(repost, info, path, project, address, port)

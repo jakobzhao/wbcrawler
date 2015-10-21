@@ -15,7 +15,7 @@ from pushbullet import Pushbullet
 from settings import TZCHINA
 from settings import PB_KEY
 
-NOTICE, RECORD, WARNING, ERROR, FATALITY = 0, 1, 2, 3, 4
+NOTICE, RECORD, WARNING, ERROR, FATALITY, PUSH = 0, 1, 2, 4, 8, 16
 pb = Pushbullet(PB_KEY)
 
 
@@ -25,8 +25,11 @@ def log(level, output, func_name=''):
         print ('[NOTICE] %s %s' % (t, output))
     elif level == WARNING:
         print ('[NOTICE] %s in func %s %s.' % (t, func_name, output))
-    elif ERROR:
+    elif level == ERROR:
         print ('[NOTICE] %s in func %s %s.' % (t, func_name, output))
-    else:
+    elif level == FATALITY:
         pb.push_note("Lord", output, func_name)
         print ('[FATAL] %s %s.' % (t, output))
+    else:
+        pb.push_note("Lord", output)
+        print output

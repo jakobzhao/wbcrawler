@@ -8,11 +8,6 @@ Created on Oct 18, 2015
 @organization: Harvard Kennedy School
 '''
 
-from wbcrawler.sna import generate_network
+from log import *
 
-# Variables
-address = "localhost"
-port = 27017
-project = 'five'
-
-generate_network(project, address, port, output="sample.gexf")
+log(PUSH, "test")

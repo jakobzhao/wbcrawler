@@ -44,9 +44,12 @@ def unregister(project, address, port, account):
 
 def create_database(project, address, port, fresh=False):
     client = MongoClient(address, port)
-    ##client.the_database.authenticate('bo', 'f', source="C:\MongoDB\data")
+    # client.the_database.authenticate()
+    # client.the_database.authenticate('bo', 'f', source="C:\MongoDB\data")
     # client = MongoClient('mongodb://bo:f@localhost:27017')
     # db.add_user('bo','f')
+    # from the address level, I have to define the url by myself. seems we cannot reply on pyton
+    # from the database level, what we can do? And how to do that?
     db = client[project]
     posts = db.posts
     users = db.users

@@ -19,7 +19,7 @@ from wbcrawler.log import *
 # 10/15/2015 64 mins
 
 
-project = 'weibo'
+project = 'five'
 # project = 'climate'
 address = 'localhost'
 port = 27017
@@ -31,9 +31,9 @@ port = 27017
 # KEYWORDS_FIVE = ['五中全会']
 # KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
 # KEYWORDS = ['中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会', '居委会']
-KEYWORDS = ['县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会', '居委会']
+# KEYWORDS = ['县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会', '居委会']
 # KEYWORDS = ['气候变化', '全球变暖']
-# KEYWORDS = ['五中全会']
+KEYWORDS = ['五中全会']
 
 start = datetime.datetime.now()
 account = register('local', address, port)
@@ -52,5 +52,6 @@ except:
 unregister('local', address, port, account)
 
 log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))
+
 if __name__ == '__main__':
     pass

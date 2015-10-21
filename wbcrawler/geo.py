@@ -35,7 +35,30 @@ def geocode(loc):
 
 
 # Estimate where a post was sent.
-def estimate_location(user):
-    db.
-    path
-    pass
+def estimate_location_by_path(user):
+    est_latlng = [0, 0]
+    path = user['path']
+    latlng = user['latlng']
+    if user['path'] != [] and user['path'] != [[0, 0, 0]]:
+
+        if latlng != [0, 0] or latlng != [-1, -1]:
+            path.append(latlng)
+        avg_lat = 0
+        avg_lng = 0
+        for latlng in path:
+            avg_lat += latlng[0]
+            avg_lng += latlng[1]
+        avg_lat = avg_lat / (1.0 * len(path))
+        avg_lng = avg_lng / (1.0 * len(path))
+        distances = []
+        for latlng in path:
+            distances.append(abs(latlng[0] - avg_lat) + abs(latlng[1] - avg_lng))
+        est_latlng = path[distances.index(min(distances))][1:]
+    elif user['path'] == [[0, 0, 0]]:
+        est_latlng = latlng
+    elif user['path'] == [] and latlng != [0, 0]:
+        est_latlng = latlng[1:0]
+    else:
+        pass
+
+    return est_latlng

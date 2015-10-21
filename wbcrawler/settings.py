@@ -17,6 +17,6 @@ BAIDU_AK = 'Y4wB8DznamkwhY8RxDiYNSHS'
 PB_KEY = 'bYJFjyvIYWbn5vg2eNiFmcapjLu1PUTL'
 
 COUNT = 200
-FLOW_CONTROL_DAYS = 60  # at the very beginning, I used 30 days.
+FLOW_CONTROL_DAYS = 20  # at the very beginning, I used 30 days.
 MIN_FWD_COUNT = 10
 TIMEOUT = 60

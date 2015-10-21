@@ -17,7 +17,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+
 from pyvirtualdisplay import Display
+
 from PIL import Image, ImageDraw
 
 from utils import get_interval_as_human
@@ -71,10 +73,12 @@ def sina_login(account):
     # input username
     # user = browser.find_element_by_id('username')
     user = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'username')))
+    user.clear()
     user.send_keys(username, Keys.ARROW_DOWN)
 
     # input the passowrd
     passwd = browser.find_element_by_id('password')
+    passwd.clear()
     passwd.send_keys(password, Keys.ARROW_DOWN)
 
     # press click and then the vcode appears.

@@ -20,16 +20,11 @@ from wbcrawler.log import *
 
 
 project = 'insurance'
-# project = 'climate'
 address = 'localhost'
 port = 27017
 # fresh = True
 
 
-# KEYWORDS_CLIMATE = ['气候变化', '全球变暖']
-# KEYWORDS = ['政府', '中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会']
-# KEYWORDS = ['气候变化', '全球变暖']
-# KEYWORDS = ['五中全会']
 KEYWORDS = ['社会保险', '社保', '商业保险', '医疗保险', '医保', '医院 报销']
 
 start = datetime.datetime.now()

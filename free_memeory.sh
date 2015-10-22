@@ -5,9 +5,9 @@
 # Harvard Kennedy School
 # Bo Zhao
 # bo_zhao@hks.harvard.edu
-# sudo pkill firefox
-# sudo free -m
 # sudo python /home/bo/Workspace/wbcrawler/insurance_crawler.py
 PATH=/home/bo/Workspace/wbscrawler
 export Path
-python insurance_crawler.py
+
+sudo pkill firefox
+sudo free -m

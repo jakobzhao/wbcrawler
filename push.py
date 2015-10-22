@@ -8,6 +8,6 @@ Created on Oct 18, 2015
 @organization: Harvard Kennedy School
 '''
 
-from log import *
+from wbcrawler.log import *
 
 log(PUSH, "test")

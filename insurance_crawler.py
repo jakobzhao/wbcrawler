@@ -13,11 +13,7 @@ from wbcrawler.weibo import sina_login
 from wbcrawler.database import register, unregister, create_database
 from wbcrawler.log import *
 
-# First Round: 20 + 88 mins: 2 hours
-# Second Round: 76 mins
-# a following Round: 65 mins
-# 10/15/2015 64 mins
-
+# First Round: 129 minutes
 
 project = 'insurance'
 address = 'localhost'

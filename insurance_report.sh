@@ -9,5 +9,5 @@
 # sudo free -m
 # sudo python /home/bo/Workspace/wbcrawler/insurance_crawler.py
 PATH=/home/bo/Workspace/wbscrawler
-export Path
-python insurance_crawler.py
+export PATH
+python insurance_daily_report.py

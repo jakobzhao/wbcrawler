@@ -15,7 +15,7 @@ from wbcrawler.parallel import parallel_crawling
 project = 'five'
 address = "localhost"
 port = 27017
-repost, info, path = 5, 0, 0
+repost, info, path = 0, 5, 0
 
 # funcs
 parallel_crawling(repost, info, path, project, address, port)

@@ -151,6 +151,7 @@ def parse_item(post, keyword):
             "mid": mid,
             "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "timestamp": t_china,
+            "location": "",
             "fwd_count": fwd_count,
             "cmt_count": 0,
             "like_count": like_count,
@@ -164,7 +165,6 @@ def parse_item(post, keyword):
                 "friend_count": 0,
                 "verified_info": "",
                 "latlng": [0, 0],
-                "loc": "",
                 "path": []
             },
             "comments": [],
@@ -181,7 +181,6 @@ def parse_item(post, keyword):
             "follower_count": 0,
             "friend_count": 0,
             "latlng": [0, 0],
-            "loc": "",
             "path": []
         }
     }

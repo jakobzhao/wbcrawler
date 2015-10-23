@@ -14,7 +14,7 @@ import time
 from bs4 import BeautifulSoup
 from pymongo import errors
 
-from settings import TIMEOUT, FLOW_CONTROL_DAYS, UTC
+from settings import TIMEOUT, FLOW_CONTROL_DAYS, FLOW_CONTROL_DAYS_REPLIES, UTC
 from utils import *
 from log import *
 from decode import mid_to_token
@@ -413,7 +413,7 @@ def parse_repost(db, browser, posts):
                 t = str(datetime.datetime.now(UTC))
                 t_utc_now = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
                 delta = (t_utc_now - item_json['reply']['timestamp']).days
-                if delta > FLOW_CONTROL_DAYS and i != 0:
+                if delta > FLOW_CONTROL_DAYS_REPLIES and i != 0:
                     stop = True
                     break
 

@@ -9,7 +9,6 @@ Created on Oct 16, 2015
 '''
 
 import sys
-
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 

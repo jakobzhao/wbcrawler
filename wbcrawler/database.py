@@ -18,7 +18,7 @@ def register(project, address, port):
     db = client[project]
 
     if db.accounts.find({"inused": False}).count() == 0:
-        occupied_msg = "All the accounts are occupied, please try again later."
+        occupied_msg = "All Robots are occupied, please try again later."
         log(FATALITY, occupied_msg)
         exit(-1)
 

@@ -27,3 +27,7 @@ multi-threading!!!
 
 no solution to cookie expiration. sina_login again?
 
+10/15/2015
+
+rename a field of a table:
+{ $rename: { "loc": "location" } }

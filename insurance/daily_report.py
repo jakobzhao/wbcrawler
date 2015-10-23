@@ -19,7 +19,9 @@ if "Linux" in platform.platform():
     # show below is not attached as well. (I cost almost 24 hours to find it out..)
     sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 
-from insurance import *
+sys.path.append("../")
+from settings import pis, project, address, port
 from wbcrawler.report import brief_report
 
-brief_report(PIs, project, address, port)
+
+brief_report(pis, project, address, port)

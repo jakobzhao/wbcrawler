@@ -16,4 +16,4 @@ port = 27017
 project = 'insurance'
 PIs = ['jakobzhao@gmail.com', 'pku_fenglin@163.com']
 Rbt_NUM = 4
-KEYWORDS = ['社会保险', '社保', '商业保险', '医疗保险', '医保', '医院 报销']
+KEYWORDS = ['社会保险', '社保', '商业保险', '医疗保险', '医保', '医院%20报销']

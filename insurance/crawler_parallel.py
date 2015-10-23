@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 '''
-Created on Oct 16, 2015
+Created on Oct 23, 2015
 @author:       Bo Zhao
 @email:        bo_zhao@hks.harvard.edu
 @website:      http://yenching.org
@@ -22,20 +22,9 @@ from wbcrawler.parallel import parallel_crawling
 # repost, path, info = 2, 0, 0
 
 # funcs
-try:
-    parallel_crawling(Rbt_NUM, 0, 0, project, address, port)
-except:
-    pass
-
-try:
-    parallel_crawling(0, Rbt_NUM, 0, project, address, port)
-except:
-    pass
-
-try:
-    parallel_crawling(0, 0, Rbt_NUM, project, address, port)
-except:
-    pass
+parallel_crawling(Rbt_NUM, 0, 0, project, address, port)
+parallel_crawling(0, Rbt_NUM, 0, project, address, port)
+parallel_crawling(0, 0, Rbt_NUM, project, address, port)
 
 if __name__ == '__main__':
     pass

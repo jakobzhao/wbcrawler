@@ -28,15 +28,15 @@ lock = Lock()
 
 # calculate the sum of robots in each category
 def create_robots(rr, pr, ir, project, address="localhost", port=27017):
-    num_of_robots = rr + ir + pr
+    num_of_robots = rr + pr + ir
     robots = []
     for robot_id in range(0, num_of_robots):
         if robot_id < rr:  # repost
             robots.append({'id': robot_id, 'project': project, 'count': rr, 'type': 'repost', 'account': register('local', address, port), 'address': address, 'port': port})
-        elif robot_id in range(robot_id, rr + ir):  # info
-            robots.append({'id': robot_id, 'project': project, 'count': ir, 'type': 'info', 'account': register('local', address, port), 'address': address, 'port': port})
-        elif robot_id >= ir + rr:  # path
+        elif robot_id in range(robot_id, rr + pr):  # path
             robots.append({'id': robot_id, 'project': project, 'count': pr, 'type': 'path', 'account': register('local', address, port), 'address': address, 'port': port})
+        elif robot_id >= rr + pr:  # indo
+            robots.append({'id': robot_id, 'project': project, 'count': ir, 'type': 'info', 'account': register('local', address, port), 'address': address, 'port': port})
     return robots
 
 
@@ -58,8 +58,8 @@ def repost_crawling(rbt):
     rr = rbt['count']
     client = MongoClient(address, port)
     db = client[project]
-    with lock:
-        browser = sina_login(rbt['account'])
+    # with lock:
+    browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": MIN_FWD_COUNT}}).count()

@@ -38,7 +38,7 @@ def brief_report(pis, project, address, port):
     utc_now_5 = now - datetime.timedelta(days=5)
 
     client = MongoClient(address, port)
-    inused = client.local.accounts.find({'inused': False}).count()
+    inused = client.local.accounts.find({'inused': True}).count()
     total = client.local.accounts.find().count()
 
     db = client[project]

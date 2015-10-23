@@ -13,7 +13,7 @@ from multiprocessing.dummy import Lock
 import socket
 
 from pymongo import MongoClient
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
 from wbcrawler.database import register, unregister
 from wbcrawler.weibo import sina_login
@@ -141,7 +141,8 @@ def parallel_crawling(rr, ir, pr, project="local", address="localhost", port=270
         log(FATALITY, "SocketError: The browser is forced to close", 'parallel_crawlling')
     except WindowsError:
         log(FATALITY, "WindowsError: The browser is forced to close", 'parallel_crawlling')
-
+    except WebDriverException:
+        log(FATALITY, "WebDriverError: The browser is forced to close.", 'parallel_crawlling')
     # close the pool and wait for the work to finish
     pool.close()
     pool.join()

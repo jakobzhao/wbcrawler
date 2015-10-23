@@ -30,4 +30,4 @@ def unlock_robots(address, port):
     log(NOTICE, "All the robots have been unlocked.")
 
 if __name__ == '__main__':
-    unlock_robots(address, port, 'local')
+    unlock_robots(address, port)

@@ -14,15 +14,13 @@ import datetime
 
 from settings import TZCHINA
 #from settings import PB_KEY
+# pb = Pushbullet(PB_KEY)
 
 NOTICE, RECORD, WARNING, ERROR, FATALITY, PUSH = 0, 1, 2, 4, 8, 16
 
 
-#pb = Pushbullet(PB_KEY)
-
-
 def log(level, output, func_name=''):
-    t = datetime.datetime.now(TZCHINA).strftime('%Y-%m-%d %H:%M')
+    t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M') + "EDT"
     if level == NOTICE:
         print ('[NOTICE] %s %s' % (t, output))
     elif level == WARNING:

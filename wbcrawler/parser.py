@@ -31,7 +31,7 @@ def parse_keyword(db, keyword, browser):
     try:
         pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
     except AttributeError:
-        log(NOTICE, "no related posts have been found.")
+        log(NOTICE, "No page list, meaning the robot is not logged on.")
         return 0
 
     log(NOTICE, 'KEYWORD "%s" contains %d pages.' % (keyword.decode("utf-8", "ignore"), pages))

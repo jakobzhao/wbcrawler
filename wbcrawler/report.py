@@ -29,7 +29,7 @@ def brief_report(pis, project, address, port):
 
     pi_str = ''
     for pi in pis:
-        pi_str += (pi + ',')
+        pi_str += (pi + ';')
 
     now = datetime.datetime.now()
     utc_now_1 = now - datetime.timedelta(days=1)
@@ -84,7 +84,7 @@ Sent from Weibo Cralwer Server'''
         server.ehlo()
         server.starttls()
         server.login(username, EMAIL_PASSWORD)
-        server.sendmail(sender, pi_str, msg)
+        server.sendmail(sender, pis, msg)
         server.quit()
     except socket.gaierror, e:
         print str(e) + "/n error raises when sending E-mails."

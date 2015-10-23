@@ -19,5 +19,5 @@ EMAIL_PASSWORD = 'nanjing1212'
 
 COUNT = 200
 FLOW_CONTROL_DAYS = 30  # at the very beginning, I used 30 days.
-MIN_FWD_COUNT = 10
+MIN_FWD_COUNT = 5
 TIMEOUT = 60

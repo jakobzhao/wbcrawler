@@ -23,10 +23,14 @@ from wbcrawler.log import *
 # funcs
 
 
-def brief_report(reciever_string, project, address, port):
+def brief_report(pis, project, address, port):
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'
-    t = datetime.datetime.now(TZCHINA).strftime('%Y-%m-%d %H:%M')
+    t = datetime.datetime.now(TZCHINA).strftime('%Y-%m-%d')
+
+    pi_str = ''
+    for pi in pis:
+        pi_str += (pi + ',')
 
     now = datetime.datetime.now()
     utc_now_1 = now - datetime.timedelta(days=1)
@@ -48,32 +52,32 @@ def brief_report(reciever_string, project, address, port):
     count_6 = db.users.find({"latlng": {"$ne": [0, 0]}}).count()
     count_7 = db.users.find({"path": {"$ne": []}}).count()
 
-    line_1 = "Occupied / total accounts: %d / %d" % (inused, total)
+    line_1 = "Occupied / total Robots: %d / %d" % (inused, total)
     line_2 = "Total posts: %d" % total_posts
-    line_3 = "During the past 24 hours: %d posts collected" % count_1
-    line_4 = "During the past 2 days: %d posts collected" % count_2
-    line_5 = "During the past 5 days: %d posts collected" % count_5
-    line_6 = "Geocoded users / not: %d / %d" % (count_6, total_users - count_6)
-    line_7 = "Users with paths / not: %d / %d" % (count_7, total_users - count_7)
+    line_3 = "Within the past 24 hours: %d collected" % count_1
+    line_4 = "Within the past 2 days: %d collected" % count_2
+    line_5 = "Within the past 5 days: %d collected" % count_5
+    line_6 = "Users with paths / not: %d / %d" % (count_7, total_users - count_7)
+    line_7 = "Geocoded users / not: %d / %d" % (count_6, total_users - count_6)
 
     msg = '''From: Crawler Server <snsgis@gmail.com>
-To: ''' + reciever_string + '''
-Subject: Daily Breif Report for ''' + project.upper() + ''' Project
+To: ''' + pi_str[:-1] + '''
+Subject: [''' + t + '''] Daily Briefing for ''' + project.capitalize() + ''' Project
 MIME-Version: 1.0
 
-Dear Lord,
+Dear PI(s),
 
-''' + line_1 + '''
-''' + line_2 + '''
-''' + line_3 + '''
-''' + line_4 + '''
-''' + line_5 + '''
-''' + line_6 + '''
-''' + line_7 + '''
-''' + t + '''
+Here is a brief report about the progress of data harvest:
+
+     ''' + line_1 + '''
+     ''' + line_2 + '''
+     ''' + line_3 + '''
+     ''' + line_4 + '''
+     ''' + line_5 + '''
+     ''' + line_6 + '''
+     ''' + line_7 + '''
 --
-Sent from Weibo Cralwer Server
-'''
+Sent from Weibo Cralwer Server'''
     # The actual mail send
     try:
         server = smtplib.SMTP()
@@ -81,7 +85,7 @@ Sent from Weibo Cralwer Server
         server.ehlo()
         server.starttls()
         server.login(username, EMAIL_PASSWORD)
-        server.sendmail(sender, reciever_string, msg)
+        server.sendmail(sender, pi_str, msg)
         server.quit()
     except socket.gaierror, e:
         print str(e) + "/n error raises when sending E-mails."

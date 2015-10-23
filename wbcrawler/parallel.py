@@ -44,10 +44,10 @@ def create_robots(rr, ir, pr, project, address="localhost", port=27017):
 def crawling_job(robot):
     if robot['type'] == 'repost':
         repost_crawling(robot)
-    elif robot['type'] == 'info':
-        info_crawling(robot)
     elif robot['type'] == 'path':
         path_crawling(robot)
+    elif robot['type'] == 'info':
+        info_crawling(robot)
     else:
         pass
 
@@ -132,7 +132,7 @@ def parallel_crawling(rr, ir, pr, project="local", address="localhost", port=270
     try:
         pool.map(crawling_job, robots)
     except TypeError, e:
-        log(FATALITY, e.message, 'parallel_crawlling')
+        log(FATALITY, e.message, 'parallel_crawlling') # AttributeError: 'str' object has no attribute 'device_iden'
     except StaleElementReferenceException:
         log(FATALITY, "StateElementReferenceException: Too many robots", 'parallel_crawlling')
     except TimeoutException:

@@ -27,7 +27,7 @@ lock = Lock()
 
 
 # calculate the sum of robots in each category
-def create_robots(rr, ir, pr, project, address="localhost", port=27017):
+def create_robots(rr, pr, ir, project, address="localhost", port=27017):
     num_of_robots = rr + ir + pr
     robots = []
     for robot_id in range(0, num_of_robots):
@@ -122,10 +122,10 @@ def path_crawling(rbt):
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
-def parallel_crawling(rr, ir, pr, project="local", address="localhost", port=27017):
+def parallel_crawling(rr, pr, ir, project="local", address="localhost", port=27017):
     # Make the Pool of workers
-    pool = ThreadPool(rr + ir + pr)
-    robots = create_robots(rr, ir, pr, project, address, port)
+    pool = ThreadPool(rr + pr + ir)
+    robots = create_robots(rr, pr, ir, project, address, port)
     # Open the urls in their own threads
     # and return the results
     try:

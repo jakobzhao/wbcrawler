@@ -14,10 +14,10 @@ from wbcrawler.parallel import parallel_crawling
 project = 'weibo'
 address = "localhost"
 port = 27017
-repost, info, path = 0, 7, 0
+repost, path, info = 0, 7, 0
 
 # funcs
-parallel_crawling(repost, info, path, project, address, port)
+parallel_crawling(repost, path, info, project, address, port)
 
 if __name__ == '__main__':
     pass

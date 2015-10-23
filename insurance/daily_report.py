@@ -1,12 +1,12 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-'''
-Created on Oct 18, 2015
-@author:       Bo Zhao
-@email:        bo_zhao@hks.harvard.edu
-@website:      http://yenching.org
-@organization: Harvard Kennedy School
-'''
+#
+# Created on Oct 16, 2015
+# @author:       Bo Zhao
+# @email:        bo_zhao@hks.harvard.edu
+# @website:      http://yenching.org
+# @organization: Harvard Kennedy School
+
 # Important: Before deploying the program, compare the deploying version with
 # a normal debugging version, especially checkking which path is not loaded in
 # sys.path. Other than the root of the program, I noticed that another path as

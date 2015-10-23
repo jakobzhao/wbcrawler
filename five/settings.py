@@ -7,6 +7,10 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-from wbcrawler.log import *
+address = "localhost"
+port = 27017
 
-log(PUSH, "test")
+project = 'five'
+pis = ['jakobzhao@gmail.com']
+Rbt_NUM = 3
+KEYWORDS = ['五中全会']

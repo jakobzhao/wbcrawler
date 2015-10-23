@@ -1,12 +1,11 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-'''
-Created on Oct 16, 2015
-@author:       Bo Zhao
-@email:        bo_zhao@hks.harvard.edu
-@website:      http://yenching.org
-@organization: The Ohio State University
-'''
+#
+# Created on Oct 16, 2015
+# @author:       Bo Zhao
+# @email:        bo_zhao@hks.harvard.edu
+# @website:      http://yenching.org
+# @organization: Harvard Kennedy School
 
 from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing.dummy import Lock

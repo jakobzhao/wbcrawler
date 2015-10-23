@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/climate")
+sys.path.append("/home/bo/Workspace/wbcrawler/five")
 
 from settings import address, port, project, KEYWORDS
 from wbcrawler.parser import parse_keyword

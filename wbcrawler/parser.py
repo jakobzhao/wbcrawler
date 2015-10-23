@@ -1,12 +1,11 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
-'''
-Created on Oct 18, 2015
-@author:       Bo Zhao
-@email:        bo_zhao@hks.harvard.edu
-@website:      http://yenching.org
-@organization: Harvard Kennedy School
-'''
+#
+# Created on Oct 16, 2015
+# @author:       Bo Zhao
+# @email:        bo_zhao@hks.harvard.edu
+# @website:      http://yenching.org
+# @organization: Harvard Kennedy School
 
 from httplib import BadStatusLine as bs
 import time
@@ -31,7 +30,7 @@ def parse_keyword(db, keyword, browser):
     try:
         pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
     except AttributeError:
-        log(NOTICE, "No page list, meaning the robot is not logged on.")
+        log(NOTICE, "No pagelist element, so the robot is forced to log out.")
         return 0
 
     log(NOTICE, 'KEYWORD "%s" contains %d pages.' % (keyword.decode("utf-8", "ignore"), pages))

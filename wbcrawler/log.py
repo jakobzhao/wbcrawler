@@ -9,9 +9,7 @@ Created on Oct 18, 2015
 '''
 
 import datetime
-
 # from pushbullet import Pushbullet
-
 from settings import TZCHINA
 #from settings import PB_KEY
 # pb = Pushbullet(PB_KEY)

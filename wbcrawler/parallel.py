@@ -14,12 +14,11 @@ import socket
 from pymongo import MongoClient
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
-from wbcrawler.database import register, unregister, unlock_robots
+from wbcrawler.database import register, unregister
 from wbcrawler.weibo import sina_login
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
 from wbcrawler.settings import *
-from wbcrawler.settings import MIN_FWD_COUNT
 
 start = datetime.datetime.now()
 utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=FLOW_CONTROL_DAYS)
@@ -58,8 +57,8 @@ def repost_crawling(rbt):
     rr = rbt['count']
     client = MongoClient(address, port)
     db = client[project]
-    # with lock:
-    browser = sina_login(rbt['account'])
+    with lock:
+        browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": MIN_FWD_COUNT}}).count()

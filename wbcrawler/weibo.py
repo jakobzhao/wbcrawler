@@ -60,7 +60,14 @@ def sina_login(account):
     if "Linux" in platform.platform():
         display = Display(visible=0, size=(1024, 768))
         display.start()
-    browser = webdriver.Firefox()
+
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+
+    browser = webdriver.Firefox(firefox_profile=firefox_profile)
+
+    # browser = webdriver.Firefox()
     browser.set_window_size(960, 1050)
     browser.set_window_position(0, 0)
     browser.set_page_load_timeout(TIMEOUT)
@@ -140,34 +147,34 @@ def get_vcode_from_pushbullet(filename, marker):
     draw.text([3, 3], marker, fill=(60, 60, 60))
     img.save(filename)
 
-    with open(filename, "rb") as vpic:
-        file_data = pb.upload_file(vpic, file_name=filename)
-    pb.push_file(**file_data)
-    # os.remove(filename)
-    latest = {}
-    stop = False
-    while True:
-        code = ""
-        time.sleep(15)
-        pushes = pb.get_pushes()[1][0:30]
-        for p in pushes:
-            if 'body' in p.keys():
-                if p['body'].split(" ")[0] == marker.split(" ")[1]:
-                    code = p['body'].split(" ")[1]
-                    stop = True
-                    break
-        if stop:
-            break
-            # verifying the vcode.
-            # latest = pb.get_pushes()[1][0]
-            # if latest['type'] == u"note":
-            #     break
-    # p = pb.get_pushes()
-    # for i in p:
-    #     ident=i.get("iden")
-    #     try:
-    #         pb.dismiss_push(ident)
-    #         pb.delete_push(ident)
-    #     except:
-    #         pass
-    return code
+    # with open(filename, "rb") as vpic:
+    #     # file_data = pb.upload_file(vpic, file_name=filename)
+    # # pb.push_file(**file_data)
+    # # os.remove(filename)
+    # latest = {}
+    # stop = False
+    # while True:
+    #     code = ""
+    #     time.sleep(15)
+    #     # pushes = pb.get_pushes()[1][0:30]
+    #     # for p in pushes:
+    #     #     if 'body' in p.keys():
+    #     #         if p['body'].split(" ")[0] == marker.split(" ")[1]:
+    #     #             code = p['body'].split(" ")[1]
+    #     #             stop = True
+    #     #             break
+    #     # if stop:
+    #     #     break
+    #         # verifying the vcode.
+    #         # latest = pb.get_pushes()[1][0]
+    #         # if latest['type'] == u"note":
+    #         #     break
+    # # p = pb.get_pushes()
+    # # for i in p:
+    # #     ident=i.get("iden")
+    # #     try:
+    # #         pb.dismiss_push(ident)
+    # #         pb.delete_push(ident)
+    # #     except:
+    # #         pass
+    # return code

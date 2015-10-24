@@ -129,6 +129,10 @@ def parallel_crawling(rr, pr, ir, project="local", address="localhost", port=270
     # and return the results
     try:
         pool.map(crawling_job, robots)
+    except NameError, e:
+        log(FATALITY, 'NameError: ' + e.message, 'parallel_crawlling')
+    except OSError, e:
+        log(FATALITY, 'OSError: ' + e.message, 'parallel_crawlling')
     except TypeError, e:
         log(FATALITY, e.message, 'parallel_crawlling') # AttributeError: 'str' object has no attribute 'device_iden'
     except StaleElementReferenceException:

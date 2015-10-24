@@ -184,7 +184,7 @@ def parse_item(post, keyword):
         }
     }
     try:
-        log(NOTICE, '%s %s %s %d' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t), content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), fwd_count))
+        log(NOTICE, '%s %s %s %d' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t), content[:10].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), fwd_count))
     except UnicodeEncodeError:
         pass
     return result_json

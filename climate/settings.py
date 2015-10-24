@@ -12,5 +12,5 @@ port = 27017
 
 project = 'climate'
 pis = ['chungen_liu@hks.harvard.edu', 'bo_zhao@hks.harvard.edu']
-Rbt_NUM = 4
+Rbt_NUM = 3
 KEYWORDS = ['气候变化', '全球变暖']

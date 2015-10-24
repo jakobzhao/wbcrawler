@@ -425,7 +425,7 @@ def parse_repost(db, browser, posts):
 
                     # insert a reply. In the end, delete the duplicated ones.
                     if post['deleted'] != None:
-                        db.posts.update({'deleted': None})
+                        db.posts.update({'mid': post['mid']}, {'deleted': None})
 
                     db.posts.update(
                         {'mid': post['mid']},

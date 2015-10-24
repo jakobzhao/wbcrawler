@@ -211,7 +211,7 @@ def parse_post(post, keyword):
             userid_tmp = post.find('img', class_='W_face_radius').attrs['wbcrawler']
             userid = int(userid_tmp.split("/")[3])
     except KeyError, e:
-        log(ERROR, e.message)
+        log(ERROR, e.message, 'parse_post')
 
     # user verification
     if post.find('a', class_='approve') is None:
@@ -292,7 +292,7 @@ def parse_post(post, keyword):
         }
     }
     try:
-        log(NOTICE, '%s %s %d %s' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), fwd_count, content.encode('utf-8', 'ignore').decode('utf-8', 'ignore')))
+        log(NOTICE, '%s %s %d %s' % (user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), fwd_count, content[:10].encode('utf-8', 'ignore').decode('utf-8', 'ignore')))
     except UnicodeEncodeError:
         pass
     return result_json
@@ -337,7 +337,7 @@ def parse_repost(db, browser, posts):
         rd = get_response_as_human(browser, url)
         # http://weibo.com/sorry?pagenotfound or the user's home page
         # http://weibo.com/u/2953377041/home?wvr=5
-        if "home" in browser.current_url or "sorry?pagenotfound" in browser.current_url or "weibo.com/login.php" in browser.current_url:
+        if ("home" in browser.current_url) or ("sorry?pagenotfound" in browser.current_url) or ("weibo.com/login.php" in browser.current_url):
             deleted(post, db)
             log(NOTICE, "The repost at %s has been deleted." % url)
             continue
@@ -349,14 +349,14 @@ def parse_repost(db, browser, posts):
         repost_panel = BeautifulSoup(rd, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
         if repost_panel == None:
             # deleted(post, db)
-            log(NOTICE, "The repost at %s has been deleted." % url)
+            log(NOTICE, "The repost at %s has been deleted. repost panel is None" % url)
             continue
 
         # 2.1 the counts
         # counts
         if repost_panel.find("div", class_="WB_feed_handle") == None:
             # deleted(post, db)
-            log(NOTICE, "The repost at %s has been deleted." % url)
+            log(NOTICE, "The repost at %s has been deleted. the feed handle is None" % url)
             continue
 
         for li in repost_panel.find("div", class_="WB_feed_handle").findAll("li"):
@@ -369,7 +369,7 @@ def parse_repost(db, browser, posts):
         like_txt = repost_panel.find("div", class_="WB_handle").findAll("li")[-1].get_text().lstrip().rstrip()
         like_count = int("0" + like_txt)
 
-        # update counts when any count number changes
+        # update counts when count number changes
         if cmt_count != post['cmt_count'] or fwd_count != post['fwd_count'] or like_count != post['like_count']:
             db.posts.update({'mid': post['mid']}, {'$set': {
                 'fwd_count': fwd_count,

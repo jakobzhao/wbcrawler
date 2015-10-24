@@ -18,6 +18,5 @@ from wbcrawler.database import unlock_robots
 address = "localhost"
 port = 27017
 
-
 # funcs
 unlock_robots('local', address, port)

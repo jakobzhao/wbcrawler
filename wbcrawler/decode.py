@@ -31,7 +31,6 @@ def base62_encode(num, alphabet=ALPHABET):
 
 def base62_decode(string, alphabet=ALPHABET):
     """Decode a Base X encoded string into the number
-
     Arguments:
     - `string`: The encoded string
     - `alphabet`: The alphabet to use for encoding

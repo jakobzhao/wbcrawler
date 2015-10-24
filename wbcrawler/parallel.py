@@ -141,11 +141,11 @@ def parallel_crawling(rr, pr, ir, project="local", address="localhost", port=270
         log(FATALITY, "TimeoutException: Too many robots", 'parallel_crawlling')
     except socket.error:
         log(FATALITY, "SocketError: The browser is forced to close", 'parallel_crawlling')
-    except WindowsError, e:
-        # [Error 32] The process cannot access the file because it is being used by another process:
-        # 'c:\\users\\bo\\appdata\\local\\temp\\tmphrg3yv.webdriver.xpi\\resource\\modules\\web-element-cache.js'
-        print e.message, str(e)
-        log(FATALITY, "WindowsError: The browser is forced to close", 'parallel_crawlling')
+    # except WindowsError, e:
+    #     # [Error 32] The process cannot access the file because it is being used by another process:
+    #     # 'c:\\users\\bo\\appdata\\local\\temp\\tmphrg3yv.webdriver.xpi\\resource\\modules\\web-element-cache.js'
+    #     print e.message, str(e)
+    #     log(FATALITY, "WindowsError: The browser is forced to close", 'parallel_crawlling')
     except WebDriverException:
         log(FATALITY, "WebDriverError: The browser is forced to close.", 'parallel_crawlling')
     # close the pool and wait for the work to finish

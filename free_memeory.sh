@@ -6,4 +6,5 @@
 # Bo Zhao
 # bo_zhao@hks.harvard.edu
 sudo pkill firefox
+sudo rm -rf /tmp
 sudo free -m

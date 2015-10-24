@@ -16,7 +16,8 @@ sys.path.append("/home/bo/Workspace/wbcrawler/five")
 
 # libraries
 from settings import project, address, port, Rbt_NUM
-from wbcrawler.parallel import parallel_crawling, unlock_robots
+from wbcrawler.parallel import parallel_crawling
+from wbcrawler.database import unlock_robots
 
 # repost, path, info = 2, 0, 0
 

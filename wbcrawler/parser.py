@@ -337,10 +337,14 @@ def parse_repost(db, browser, posts):
         rd = get_response_as_human(browser, url)
         # http://weibo.com/sorry?pagenotfound or the user's home page
         # http://weibo.com/u/2953377041/home?wvr=5
-        if ("home" in browser.current_url) or ("sorry?pagenotfound" in browser.current_url) or ("weibo.com/login.php" in browser.current_url):
+        if ("home" in browser.current_url) or ("sorry?pagenotfound" in browser.current_url):
             deleted(post, db)
             log(NOTICE, "The repost at %s has been deleted." % url)
             continue
+
+        if "weibo.com/login.php" in browser.current_url:
+            log(WARNING, "This robot is watched by the Weibo server when visiting %s" % url)
+            return
         # test
         # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
         # f.write(str(rd))
@@ -479,6 +483,9 @@ def parse_info(db, browser, users):
         log(NOTICE, "%d users remain." % (count - cur))
         cur += 1
         start = datetime.datetime.now()
+        if "weibo.com/login.php?url=" in browser.current_url:
+            log(WARNING, "This robot is watched by the mobile weibo.cn server when visiting %s" % url)
+            return
         if 'location' in user.keys():
             if user['location'] == u'其他' or user['location'] == u'未知':
                 continue
@@ -575,6 +582,10 @@ def parse_path(db, browser, users):
             db.users.update({'userid': user['userid']}, {'$set': {'path': [0, 0, datetime.datetime.now(TZCHINA)]}})
             browser.set_page_load_timeout(TIMEOUT)
             continue
+        if "http://weibo.com/login.php?url=" in browser.current_url:
+            log(WARNING, "This robot is watched by the place server when visiting %s" % url)
+            return
+
         path = []
         if "noUserFeed" not in rd:
             # STEP TWO: Assigning location the path url

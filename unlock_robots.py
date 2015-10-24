@@ -12,8 +12,7 @@ sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 
 # libraries
-from pymongo import MongoClient
-from wbcrawler.log import *
+from wbcrawler.database import unlock_robots
 
 # variables
 address = "localhost"
@@ -21,11 +20,4 @@ port = 27017
 
 
 # funcs
-def unlock_robots(address, port):
-    client = MongoClient(address, port)
-    db = client['local']
-    db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
-    log(NOTICE, "All the robots have been unlocked.")
-
-if __name__ == '__main__':
-    unlock_robots(address, port)
+unlock_robots('local', address, port)

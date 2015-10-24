@@ -23,3 +23,4 @@ def to_pinyin(keyword):
 
 def get_interval_as_human(low=18, high=22):
     return randint(low, high)
+

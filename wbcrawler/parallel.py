@@ -14,7 +14,7 @@ import socket
 from pymongo import MongoClient
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
-from wbcrawler.database import register, unregister
+from wbcrawler.database import register, unregister, unlock_robots
 from wbcrawler.weibo import sina_login
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *

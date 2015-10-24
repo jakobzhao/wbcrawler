@@ -12,9 +12,9 @@ from pymongo import MongoClient, DESCENDING
 from log import *
 
 
-def register(project, address, port):
+def register(local, address, port):
     client = MongoClient(address, port)
-    db = client[project]
+    db = client[local]
 
     if db.accounts.find({"inused": False}).count() == 0:
         occupied_msg = "All Robots are occupied, please try again later."
@@ -30,11 +30,11 @@ def register(project, address, port):
     return account
 
 
-def unregister(project, address, port, account):
+def unregister(local, address, port, account):
     # {'$set': {'inused': false}}
     client = MongoClient(address, port)
 
-    db = client[project]
+    db = client[local]
 
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
@@ -60,3 +60,10 @@ def create_database(project, address, port, fresh=False):
     posts.create_index([("mid", DESCENDING)], unique=True)
     users.create_index([("userid", DESCENDING)], unique=True)
     return db
+
+
+def unlock_robots(local, address, port):
+    client = MongoClient(address, port)
+    db = client[local]
+    db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
+    log(NOTICE, "All the robots have been unlocked.")

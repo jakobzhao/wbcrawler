@@ -13,15 +13,15 @@ import time
 from bs4 import BeautifulSoup
 from pymongo import errors
 
-from settings import TIMEOUT, FLOW_CONTROL_DAYS, FLOW_CONTROL_DAYS_REPLIES, UTC
-from utils import *
+from settings import TIMEOUT, UTC, TZCHINA
+from utils import get_interval_as_human
 from log import *
 from decode import mid_to_token
 from geo import geocode
 from weibo import get_response_as_human
 
 
-def parse_keyword(db, keyword, browser):
+def parse_keyword(db, keyword, browser, FLOW_CONTROL_DAYS=365):
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
@@ -311,7 +311,7 @@ def deleted(post, db):
     return 0
 
 
-def parse_repost(db, browser, posts):
+def parse_repost(db, browser, posts, FLOW_CONTROL_DAYS_REPLIES=30):
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
     count = posts._Cursor__limit
@@ -582,8 +582,9 @@ def parse_path(db, browser, users):
             db.users.update({'userid': user['userid']}, {'$set': {'path': [0, 0, datetime.datetime.now(TZCHINA)]}})
             browser.set_page_load_timeout(TIMEOUT)
             continue
-        if "http://weibo.com/login.php?url=" in browser.current_url:
+        if "weibo.com/login.php?url=" in browser.current_url:
             log(WARNING, "This robot is watched by the place server when visiting %s" % url)
+            browser.set_page_load_timeout(TIMEOUT)
             return
 
         path = []

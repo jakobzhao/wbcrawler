@@ -13,10 +13,11 @@ sys.path.append("/home/bo/Workspace/wbcrawler")
 
 # libraries
 from wbcrawler.database import unlock_robots
+from settings import SETTINGS
 
 # variables
 address = "localhost"
 port = 27017
 
 # funcs
-unlock_robots('local', address, port)
+unlock_robots(SETTINGS)

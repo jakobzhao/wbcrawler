@@ -9,15 +9,13 @@
 
 # libraries
 from wbcrawler.parallel import parallel_crawling
+from settings import SETTINGS
 
 # variables
-project = 'weibo'
-address = "localhost"
-port = 27017
-repost, path, info = 0, 6, 0
+repost, path, info = 0, 12, 0
 
 # funcs
-parallel_crawling(repost, path, info, project, address, port)
+parallel_crawling(repost, path, info, SETTINGS['project'], SETTINGS['address'], SETTINGS['port'], SETTINGS['replies_control_days'])
 
 if __name__ == '__main__':
     pass

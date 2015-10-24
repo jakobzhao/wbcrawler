@@ -14,18 +14,19 @@ sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
 # libraries
-from settings import project, address, port, Rbt_NUM
+from settings import SETTINGS
 from wbcrawler.parallel import parallel_crawling
 from wbcrawler.database import unlock_robots
+
 # repost, path, info = 2, 0, 0
 
 # funcs
-parallel_crawling(Rbt_NUM, 0, 0, project, address, port)
-unlock_robots('local', address, port)
-parallel_crawling(0, Rbt_NUM, 0, project, address, port)
-unlock_robots('local', address, port)
-parallel_crawling(0, 0, Rbt_NUM, project, address, port)
-unlock_robots('local', address, port)
+parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS['project'], SETTINGS['address'], SETTINGS['port'])
+unlock_robots(SETTINGS)
+parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS['project'], SETTINGS['address'], SETTINGS['port'])
+unlock_robots(SETTINGS)
+parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS['project'], SETTINGS['address'], SETTINGS['port'])
+unlock_robots(SETTINGS)
 
 if __name__ == '__main__':
     pass

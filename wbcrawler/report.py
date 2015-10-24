@@ -22,10 +22,15 @@ from wbcrawler.log import *
 # funcs
 
 
-def brief_report(pis, project, address, port):
+def brief_report(settings):
+    pis = settings['pis']
+    project = settings['project']
+    address = settings['address']
+    port = settings['port']
+
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'
-    t = datetime.datetime.now(TZCHINA).strftime('%Y-%m-%d')
+    t = datetime.datetime.now().strftime('%Y-%m-%d')
 
     pi_str = ''
     for pi in pis:

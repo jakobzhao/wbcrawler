@@ -12,9 +12,9 @@ from pymongo import MongoClient, DESCENDING
 from log import *
 
 
-def register(local, address, port):
-    client = MongoClient(address, port)
-    db = client[local]
+def register(settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['account_db']]
 
     if db.accounts.find({"inused": False}).count() == 0:
         occupied_msg = "All Robots are occupied, please try again later."
@@ -30,26 +30,26 @@ def register(local, address, port):
     return account
 
 
-def unregister(local, address, port, account):
+def unregister(settings, account):
     # {'$set': {'inused': false}}
-    client = MongoClient(address, port)
+    client = MongoClient(settings['address'], settings['port'])
 
-    db = client[local]
+    db = client[settings['account_db']]
 
     db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
     return True
 
 
-def create_database(project, address, port, fresh=False):
-    client = MongoClient(address, port)
+def create_database(settings, fresh=False):
+    client = MongoClient(settings['address'], settings['port'])
     # client.the_database.authenticate()
     # client.the_database.authenticate('bo', 'f', source="C:\MongoDB\data")
     # client = MongoClient('mongodb://bo:f@localhost:27017')
     # db.add_user('bo','f')
     # from the address level, I have to define the url by myself. seems we cannot reply on pyton
     # from the database level, what we can do? And how to do that?
-    db = client[project]
+    db = client[settings['project']]
     posts = db.posts
     users = db.users
 
@@ -62,8 +62,8 @@ def create_database(project, address, port, fresh=False):
     return db
 
 
-def unlock_robots(local, address, port):
-    client = MongoClient(address, port)
-    db = client[local]
+def unlock_robots(settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['account_db']]
     db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
     log(NOTICE, "All the robots have been unlocked.")

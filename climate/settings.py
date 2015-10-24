@@ -7,10 +7,15 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-address = "localhost"
-port = 27017
-
-project = 'climate'
-pis = ['chungen_liu@hks.harvard.edu', 'bo_zhao@hks.harvard.edu']
-Rbt_NUM = 3
-KEYWORDS = ['气候变化', '全球变暖']
+SETTINGS = {
+    'project': 'climate',
+    'pis': ['chungen_liu@hks.harvard.edu', 'bo_zhao@hks.harvard.edu'],
+    'account_db': 'local',
+    'address': 'localhost',
+    'port': 27017,
+    'robot_num': 3,
+    'keywords': ['气候变化', '全球变暖'],
+    'control_days': 365,
+    'replies_control_days': 45,
+    'min_fwd_times': 5
+}

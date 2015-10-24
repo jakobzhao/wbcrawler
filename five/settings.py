@@ -7,10 +7,15 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-address = "localhost"
-port = 27017
-
-project = 'five'
-pis = ['jakobzhao@gmail.com']
-Rbt_NUM = 3
-KEYWORDS = ['五中全会']
+SETTINGS = {
+    'project': 'five',
+    'pis': ['jakobzhao@gmail.com'],
+    'account_db': 'local',
+    'address': 'localhost',
+    'port': 27017,
+    'robot_num': 3,
+    'keywords': ['五中全会'],
+    'control_days': 365,
+    'replies_control_days': 45,
+    'min_fwd_times': 5
+}

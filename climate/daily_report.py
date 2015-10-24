@@ -13,12 +13,13 @@
 # show below is not attached as well. (I cost almost 24 hours to find it out..)
 
 import sys
+from settings import SETTINGS
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/climate")
 
-from settings import pis, project, address, port
 from wbcrawler.report import brief_report
+from settings import SETTINGS
 
-brief_report(pis, project, address, port)
+brief_report(SETTINGS)

@@ -18,24 +18,22 @@ from wbcrawler.database import register, unregister
 from wbcrawler.weibo import sina_login
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
-from wbcrawler.settings import *
 
-start = datetime.datetime.now()
-utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=FLOW_CONTROL_DAYS)
 lock = Lock()
+start = datetime.datetime.now()
 
 
 # calculate the sum of robots in each category
-def create_robots(rr, pr, ir, project, address="localhost", port=27017):
+def create_robots(rr, pr, ir, settings):
     num_of_robots = rr + pr + ir
     robots = []
     for robot_id in range(0, num_of_robots):
         if robot_id < rr:  # repost
-            robots.append({'id': robot_id, 'project': project, 'count': rr, 'type': 'repost', 'account': register('local', address, port), 'address': address, 'port': port})
+            robots.append({'id': robot_id, 'count': rr, 'type': 'repost', 'account': register(settings), 'settings': settings})
         elif robot_id in range(robot_id, rr + pr):  # path
-            robots.append({'id': robot_id, 'project': project, 'count': pr, 'type': 'path', 'account': register('local', address, port), 'address': address, 'port': port})
+            robots.append({'id': robot_id, 'count': pr, 'type': 'path', 'account': register(settings), 'settings': settings})
         elif robot_id >= rr + pr:  # indo
-            robots.append({'id': robot_id, 'project': project, 'count': ir, 'type': 'info', 'account': register('local', address, port), 'address': address, 'port': port})
+            robots.append({'id': robot_id, 'count': ir, 'type': 'info', 'account': register(settings), 'settings': settings})
     return robots
 
 
@@ -51,33 +49,32 @@ def crawling_job(robot):
 
 
 def repost_crawling(rbt):
-    address = rbt['address']
-    port = rbt['port']
-    project = rbt['project']
+    utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=rbt['settings']['replies_control_days'])
+
     rr = rbt['count']
-    client = MongoClient(address, port)
-    db = client[project]
+    client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
+    db = client[rbt['settings']['project']]
     with lock:
         browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
-        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": MIN_FWD_COUNT}}).count()
+        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).count()
         slc = count / rr
-        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": MIN_FWD_COUNT}}).skip(slc * rbt['id']).limit(slc)
+        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
         parse_repost(db, browser, posts)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
         log(ERROR, "prorgam is interrupted.", "repost_crawling")
     finally:
         browser.close()
-        unregister('local', address, port, rbt['account'])
+        unregister(rbt['settings'], rbt['account'])
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
 def info_crawling(rbt):
-    address = rbt['address']
-    port = rbt['port']
-    project = rbt['project']
+    address = rbt['settings']['address']
+    port = rbt['settings']['port']
+    project = rbt['settings']['project']
     ir = rbt['count']
     client = MongoClient(address, port)
     db = client[project]
@@ -93,14 +90,14 @@ def info_crawling(rbt):
         log(ERROR, "Program is interrupted.", 'info_crawling')
     finally:
         browser.close()
-        unregister('local', address, port, rbt['account'])
+        unregister(rbt['settings'], rbt['account'])
         log(NOTICE, "Time: %d min(s)." % int((datetime.datetime.now() - start).seconds / 60))
 
 
 def path_crawling(rbt):
-    address = rbt['address']
-    port = rbt['port']
-    project = rbt['project']
+    address = rbt['settings']['address']
+    port = rbt['settings']['port']
+    project = rbt['settings']['project']
     pr = rbt['count']
     client = MongoClient(address, port)
     db = client[project]
@@ -117,14 +114,14 @@ def path_crawling(rbt):
         log(ERROR, "Program is interrupted.", 'path_crawling')
     finally:
         browser.close()
-        unregister('local', address, port, rbt['account'])
+        unregister(rbt['settings'], address)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
-def parallel_crawling(rr, pr, ir, project="local", address="localhost", port=27017):
+def parallel_crawling(rr, pr, ir, settings):
     # Make the Pool of workers
     pool = ThreadPool(rr + pr + ir)
-    robots = create_robots(rr, pr, ir, project, address, port)
+    robots = create_robots(rr, pr, ir, settings)
     # Open the urls in their own threads
     # and return the results
     try:
@@ -134,7 +131,7 @@ def parallel_crawling(rr, pr, ir, project="local", address="localhost", port=270
     except OSError, e:
         log(FATALITY, 'OSError: ' + e.message, 'parallel_crawlling')
     except TypeError, e:
-        log(FATALITY, e.message, 'parallel_crawlling') # AttributeError: 'str' object has no attribute 'device_iden'
+        log(FATALITY, e.message, 'parallel_crawlling')  # AttributeError: 'str' object has no attribute 'device_iden'
     except StaleElementReferenceException:
         log(FATALITY, "StateElementReferenceException: Too many robots", 'parallel_crawlling')
     except TimeoutException:

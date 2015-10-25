@@ -430,7 +430,11 @@ def parse_repost(posts, robot, db):
 
                     # insert a reply. In the end, delete the duplicated ones.
                     if post['deleted'] != None:
-                        db.posts.update({'mid': post['mid']}, {'deleted': None})
+                        try:
+                            db.posts.update({'mid': post['mid']}, {'deleted': None})
+                        except errors.DuplicateKeyError:
+                            log(NOTICE, 'duplicated none deleted.')
+
 
                     db.posts.update(
                         {'mid': post['mid']},

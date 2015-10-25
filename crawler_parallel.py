@@ -15,7 +15,7 @@ from settings import SETTINGS
 repost, path, info = 0, 12, 0
 
 # funcs
-parallel_crawling(repost, path, info, SETTINGS['project'], SETTINGS['address'], SETTINGS['port'], SETTINGS['replies_control_days'])
+parallel_crawling(repost, path, info, SETTINGS)
 
 if __name__ == '__main__':
     pass

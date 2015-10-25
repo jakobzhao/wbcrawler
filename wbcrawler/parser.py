@@ -19,7 +19,6 @@ from log import *
 from decode import mid_to_token
 from geo import geocode
 from utils import get_response_as_human
-from pymongo import MongoClient
 
 
 def parse_keyword(keyword, robot, db):
@@ -105,7 +104,7 @@ def parse_keyword(keyword, robot, db):
             break
             # print "The keyword %s has been parsed." % keyword.decode('utf-8')
         log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
-        return True
+    return True
 
 
 def update_keyword(keyword, now):
@@ -486,7 +485,7 @@ def parse_repost(posts, robot, db):
                         if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']:
                             break
         log(NOTICE, 'All reposts of this post has been processed.')
-        return True
+    return True
 
 
 def parse_info(users, robot, db):

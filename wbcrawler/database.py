@@ -84,10 +84,8 @@ def delete_post(mid, settings):
             delete_post(reply_mid, settings)
 
         if "//" not in content:
-            print content
+            log(NOTICE, "The content to delete: %s" % content)
             for p in db.posts.find({'deleted': {'$ne': True}}):
-                # print content
-                # print p['content']
                 try:
                     ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
                 except:

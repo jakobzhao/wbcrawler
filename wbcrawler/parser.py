@@ -314,7 +314,9 @@ def deleted(post, db):
     return 0
 
 
-def parse_repost(db, browser, posts, FLOW_CONTROL_DAYS_REPLIES=30):
+def parse_repost(browser, posts, settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['project']]
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
     count = posts._Cursor__limit
@@ -418,7 +420,7 @@ def parse_repost(db, browser, posts, FLOW_CONTROL_DAYS_REPLIES=30):
                 t = str(datetime.datetime.now(UTC))
                 t_utc_now = datetime.datetime(int(t[0:4]), int(t[5:7]), int(t[8:10]), int(t[11:13]), int(t[14:16]), 0, 0, tzinfo=UTC)
                 delta = (t_utc_now - item_json['reply']['timestamp']).days
-                if delta > FLOW_CONTROL_DAYS_REPLIES and i != 0:
+                if delta > settings['replies_control_days'] and i != 0:
                     stop = True
                     break
 

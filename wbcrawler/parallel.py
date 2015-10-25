@@ -61,7 +61,7 @@ def repost_crawling(rbt):
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).count()
         slc = count / rr
         posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
-        parse_repost(db, browser, posts)
+        parse_repost(browser, posts, rbt['settings'])
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
         log(ERROR, "prorgam is interrupted.", "repost_crawling")

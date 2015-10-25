@@ -18,7 +18,7 @@ from wbcrawler.database import register, unregister
 from wbcrawler.weibo import sina_login
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
-
+from httplib import BadStatusLine
 lock = Lock()
 start = datetime.datetime.now()
 
@@ -146,5 +146,8 @@ def parallel_crawling(rr, pr, ir, settings):
     except WebDriverException:
         log(FATALITY, "WebDriverError: The browser is forced to close.", 'parallel_crawlling')
     # close the pool and wait for the work to finish
+    except BadStatusLine, e:
+        log(FATALITY, "BadStatusline: The browser is forced to close.", 'parallel_crawlling')
+
     pool.close()
     pool.join()

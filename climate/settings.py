@@ -15,7 +15,7 @@ SETTINGS = {
     'port': 27017,
     'robot_num': 3,
     'keywords': ['气候变化', '全球变暖'],
-    'control_days': 365,
-    'replies_control_days': 45,
+    'control_days': 30,
+    'replies_control_days': 10,
     'min_fwd_times': 5
 }

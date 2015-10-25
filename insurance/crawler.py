@@ -15,12 +15,15 @@ sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
 from wbcrawler.parser import parse_keyword
 from wbcrawler.weibo import sina_login
-from wbcrawler.database import register, unregister, create_database
+from wbcrawler.database import register, unregister, create_database, unlock_robots
 from wbcrawler.log import *
 from settings import SETTINGS
 
 # First Round: 129 minutes
+# unlock the unreleased robots
+unlock_robots(SETTINGS)
 
+# start to crawl
 start = datetime.datetime.now()
 account = register(SETTINGS)
 browser = sina_login(account)

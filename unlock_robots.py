@@ -16,8 +16,6 @@ from wbcrawler.database import unlock_robots
 from settings import SETTINGS
 
 # variables
-address = "localhost"
-port = 27017
 
 # funcs
 unlock_robots(SETTINGS)

@@ -58,7 +58,7 @@ def repost_crawling(rbt):
         browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
-        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).count()
+        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$ne": True}}).count()
         slc = count / rr
         posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
         parse_repost(browser, posts, rbt['settings'])

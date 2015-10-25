@@ -160,6 +160,7 @@ def unlock_robots(settings):
     client = MongoClient(settings['address'], settings['port'])
     db = client[settings['account_db']]
     db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
+    db.posts.delete_many({"mid": None})
     log(NOTICE, "All the robots have been unlocked.")
 
 

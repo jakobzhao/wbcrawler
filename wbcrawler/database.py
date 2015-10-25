@@ -106,12 +106,12 @@ def traverse_post_delete(settings):
     client = MongoClient(settings['address'], settings['port'])
     db = client[settings['project']]
     content = ''
-    for post in db.posts.find_one({'delete': True}):
+    for post in db.posts.find({'delete': True}):
         try:
             content = post['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
         except:
             continue
-        if "//" not in content:
+        if "//" not in content and content != '':
             for p in db.posts.find({'deleted': {'$ne': True}}):
                 try:
                     ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')

@@ -16,4 +16,4 @@ mids = []
 
 for mid in mids:
     delete_post(mid, SETTINGS)
-    log(NOTICE, 'the post %d and its accompanying replies have been deleted')
+    log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)

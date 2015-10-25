@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/climate")
+sys.path.append("/home/bo/Workspace/wbcrawler/five")
 
 from wbcrawler.log import *
 from settings import SETTINGS
@@ -21,4 +21,4 @@ mids = []
 
 for mid in mids:
     delete_post(mid, SETTINGS)
-    log(NOTICE, 'the post %d and its accompanying replies have been deleted')
+    log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)

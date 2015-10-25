@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/climate")
+sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
 from wbcrawler.log import *
 from settings import SETTINGS

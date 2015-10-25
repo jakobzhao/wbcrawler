@@ -147,7 +147,7 @@ def parallel_crawling(rr, pr, ir, settings):
         log(FATALITY, "WebDriverError: The browser is forced to close.", 'parallel_crawlling')
     # close the pool and wait for the work to finish
     except BadStatusLine, e:
-        log(FATALITY, "BadStatusline: The browser is forced to close.", 'parallel_crawlling')
+        log(FATALITY, "BadStatusline: The browser is forced to close." + e.message, 'parallel_crawlling')
 
     pool.close()
     pool.join()

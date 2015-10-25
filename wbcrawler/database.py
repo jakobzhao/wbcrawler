@@ -67,3 +67,19 @@ def unlock_robots(settings):
     db = client[settings['account_db']]
     db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
     log(NOTICE, "All the robots have been unlocked.")
+
+
+def delete_post(mid, settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['project']]
+    if db.posts.find_one({'mid': mid}) is not None:
+        post = db.posts.find_one({'mid': mid})
+        replies = post['replies']
+        db.posts.update_one({'mid': mid}, {'$set': {'deleted': True}})
+        db.posts.update_one({'mid': mid}, {'$set': {'replies': []}})
+        for reply in replies:
+            reply_mid = reply['mid']
+            delete_post(reply_mid, settings)
+    else:
+        return
+    log(NOTICE, "The specified post and its replies have been marked as {'deleted': true}.")

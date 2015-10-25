@@ -19,9 +19,12 @@ from log import *
 from decode import mid_to_token
 from geo import geocode
 from weibo import get_response_as_human
+from pymongo import MongoClient
 
 
-def parse_keyword(db, keyword, browser, FLOW_CONTROL_DAYS=365):
+def parse_keyword(keyword, browser, settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['project']]
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
@@ -73,7 +76,7 @@ def parse_keyword(db, keyword, browser, FLOW_CONTROL_DAYS=365):
                 #            the reposts might update very often.
                 # (2) delta.days < 3 flow control. Keep the program manageable,
                 #            if not, too many queries if run the program for a while.
-                if i == 0 or delta.days < FLOW_CONTROL_DAYS:
+                if i == 0 or delta.days < settings['control_days']:
                     db.posts.update({'mid': json_data['post']['mid']},
                                     {'$set': {'fwd_count': json_data['post']['fwd_count'],
                                               'cmd_count': json_data['post']['cmt_count'],

@@ -36,12 +36,12 @@ try:
     db = create_database(SETTINGS)
     for keyword in SETTINGS['keywords']:
         round_start = datetime.datetime.now()
-        parse_keyword(db, keyword, browser)
+        parse_keyword(keyword, browser, SETTINGS)
         log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
         # except KeyboardInterrupt, e:
 except:
     browser.close()
-    log(ERROR, 'An error occurs.', 'Crawler.py')
+    log(ERROR, 'An error occurs.', 'crawler.py')
 finally:
     unregister(SETTINGS, account)
     log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))

@@ -83,7 +83,7 @@ def delete_post(mid, settings):
             delete_post(reply_mid, settings)
 
         if "//" not in content:
-            for post in db.posts.find():
+            for post in db.posts.find({'deleted': {'$ne': True}}):
                 if content in post['content']:
                     db.posts.update_one({'mid': post['mid']}, {'$set': {'deleted': True}})
                     db.posts.update_one({'mid': post['mid']}, {'$set': {'replies': []}})

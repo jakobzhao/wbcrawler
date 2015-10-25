@@ -75,11 +75,21 @@ def delete_post(mid, settings):
     if db.posts.find_one({'mid': mid}) is not None:
         post = db.posts.find_one({'mid': mid})
         replies = post['replies']
+        content = post['content']
         db.posts.update_one({'mid': mid}, {'$set': {'deleted': True}})
         db.posts.update_one({'mid': mid}, {'$set': {'replies': []}})
         for reply in replies:
             reply_mid = reply['mid']
             delete_post(reply_mid, settings)
+
+        if "//" not in content:
+            for post in db.posts.find():
+                if content in post['content']:
+                    db.posts.update_one({'mid': post['mid']}, {'$set': {'deleted': True}})
+                    db.posts.update_one({'mid': post['mid']}, {'$set': {'replies': []}})
+                    for reply in replies:
+                        reply_mid = reply['mid']
+                        delete_post(reply_mid, settings)
     else:
         return
     log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': true}." % mid)

@@ -84,7 +84,7 @@ def delete_post(mid, settings):
             delete_post(reply_mid, settings)
 
         if "//" not in content:
-            log(NOTICE, "The content to delete: %s" % content)
+            log(NOTICE, "The post to delete: %s" % content)
             for p in db.posts.find({'deleted': {'$ne': True}}):
                 try:
                     ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
@@ -99,4 +99,4 @@ def delete_post(mid, settings):
                         delete_post(r_mid, settings)
     else:
         return
-    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': true}." % mid)
+    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % mid)

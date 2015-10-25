@@ -121,9 +121,9 @@ def traverse_post_delete(settings):
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True}})
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'replies': []}})
                     rs = p['replies']
+                    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % p['mid'])
                     for r in rs:
                         r_mid = r['mid']
                         delete_post(r_mid, settings)
     else:
         return
-    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % mid)

@@ -12,7 +12,7 @@ from wbcrawler.parallel import parallel_crawling
 from settings import SETTINGS
 
 # variables
-repost, path, info = 0, 8, 0
+repost, path, info = 1, 0, 1
 
 # funcs
 parallel_crawling(repost, path, info, SETTINGS)

@@ -10,7 +10,7 @@
 
 from wbcrawler.log import *
 from settings import SETTINGS
-from wbcrawler.database import delete_post
+from wbcrawler.robot import delete_post
 
 mids = []
 

@@ -9,6 +9,9 @@
 
 
 from random import randint
+import time
+from selenium.common.exceptions import TimeoutException
+from log import *
 
 
 # hanzi to pinyin
@@ -24,3 +27,26 @@ def to_pinyin(keyword):
 def get_interval_as_human(low=18, high=22):
     return randint(low, high)
 
+
+def get_response_as_human(browser, url, page_reload=True):
+    url_raw = url
+    response_data = ''
+    waiting = get_interval_as_human()
+    if page_reload:
+        while True:
+            try:
+                browser.get(url_raw)
+                time.sleep(waiting)
+                response_data = browser.page_source
+                if response_data != {}:
+                    break
+            except TimeoutException:
+                url_raw = browser.current_url
+                log(NOTICE, 'Web page refreshing')
+    else:
+        try:
+            browser.get(url_raw)
+            time.sleep(waiting)
+        except TimeoutException:
+            log(WARNING, 'timeout', 'get_response_as_human')
+    return response_data

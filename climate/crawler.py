@@ -14,8 +14,7 @@ sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/climate")
 
 from wbcrawler.parser import parse_keyword
-from wbcrawler.weibo import sina_login
-from wbcrawler.database import register, unregister, create_database, unlock_robots
+from wbcrawler.robot import register, unregister, create_database, unlock_robots
 from wbcrawler.log import *
 from settings import SETTINGS
 
@@ -26,32 +25,28 @@ unlock_robots(SETTINGS)
 
 # start to crawl
 start = datetime.datetime.now()
-account = register(SETTINGS)
-browser = sina_login(account)
-accounts = [account]
+t = SETTINGS['robot_num']
+
+robot = {}
+accounts = []
+for i in range(t):
+    if robot == {}:
+        robot = register(SETTINGS)
+    else:
+        break
+
 try:
     db = create_database(SETTINGS)
     for keyword in SETTINGS['keywords']:
         round_start = datetime.datetime.now()
-        t = SETTINGS['robot_num']
-        for i in range(0, t):
-            response = parse_keyword(keyword, browser, SETTINGS)
-            if response:
-                log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
-            else:
-                # push on stack
-                account = register(SETTINGS)
-                browser = sina_login(account)
-                accounts.append(account)
-            i += 1
+        parse_keyword(keyword, robot, db)
+        log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (keyword.decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
         # except KeyboardInterrupt, e:
 except:
-    browser.close()
     log(ERROR, 'An error occurs.', 'crawler.py')
 finally:
-    # pull out of stack
-    for account in accounts:
-        unregister(SETTINGS, account)
+    # out of the stak
+    unregister(robot)
     log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))
 
 if __name__ == '__main__':

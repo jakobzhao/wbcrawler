@@ -14,26 +14,60 @@ import socket
 from pymongo import MongoClient
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
-from wbcrawler.database import register, unregister
-from wbcrawler.weibo import sina_login
+from wbcrawler.robot import register, unregister
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
 from httplib import BadStatusLine
-lock = Lock()
+
 start = datetime.datetime.now()
+lock = Lock()
 
 
 # calculate the sum of robots in each category
 def create_robots(rr, pr, ir, settings):
     num_of_robots = rr + pr + ir
     robots = []
+
     for robot_id in range(0, num_of_robots):
-        if robot_id < rr:  # repost
-            robots.append({'id': robot_id, 'count': rr, 'type': 'repost', 'account': register(settings), 'settings': settings})
-        elif robot_id in range(robot_id, rr + pr):  # path
-            robots.append({'id': robot_id, 'count': pr, 'type': 'path', 'account': register(settings), 'settings': settings})
-        elif robot_id >= rr + pr:  # indo
-            robots.append({'id': robot_id, 'count': ir, 'type': 'info', 'account': register(settings), 'settings': settings})
+        robot = {}
+
+        for i in range(robot_id, num_of_robots):
+            if robot == {}:
+                # with lock:
+                robot = register(settings)
+            else:
+                break
+
+        if robot != {}:
+            if robot_id < rr:  # repost
+                robot['type'] = 'repost'
+                robots.append(robot)
+            elif robot_id in range(robot_id, rr + pr):  # path
+                robot['type'] = 'path'
+                robots.append(robot)
+            elif robot_id >= rr + pr:  # info
+                robot['type'] = 'info'
+                robots.append(robot)
+
+    nrr, npr, nir = 0, 0, 0
+    for robot in robots:
+        if robot['type'] == 'repost':
+            robot['id'] = nrr
+            nrr += 1
+        elif robot['type'] == 'path':
+            robot['id'] = npr
+            npr += 1
+        elif robot['type'] == 'info':
+            robot['id'] = nir
+            nir += 1
+
+    for robot in robots:
+        if robot['type'] == 'repost':
+            robot['count'] = nrr
+        elif robot['type'] == 'path':
+            robot['count'] = nrr
+        elif robot['type'] == 'info':
+            robot['count'] = nrr
     return robots
 
 
@@ -54,67 +88,55 @@ def repost_crawling(rbt):
     rr = rbt['count']
     client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
     db = client[rbt['settings']['project']]
-    with lock:
-        browser = sina_login(rbt['account'])
     try:
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$ne": True}}).count()
         slc = count / rr
         posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
-        parse_repost(browser, posts, rbt['settings'])
+        parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
         log(ERROR, "prorgam is interrupted.", "repost_crawling")
     finally:
-        browser.close()
-        unregister(rbt['settings'], rbt['account'])
+        unregister(rbt)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
 def info_crawling(rbt):
-    address = rbt['settings']['address']
-    port = rbt['settings']['port']
-    project = rbt['settings']['project']
+
     ir = rbt['count']
-    client = MongoClient(address, port)
-    db = client[project]
-    browser = sina_login(rbt['account'])
+    client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
+    db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
         count = db.users.find({'latlng': [0, 0]}).count()
         slc = count / ir
         users = db.users.find({'latlng': [0, 0]}).skip(slc * rbt['id']).limit(slc)
-        parse_info(db, browser, users)
+        parse_info(users, rbt, db)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
         log(ERROR, "Program is interrupted.", 'info_crawling')
     finally:
-        browser.close()
-        unregister(rbt['settings'], rbt['account'])
+        unregister(rbt)
         log(NOTICE, "Time: %d min(s)." % int((datetime.datetime.now() - start).seconds / 60))
 
 
 def path_crawling(rbt):
-    address = rbt['settings']['address']
-    port = rbt['settings']['port']
-    project = rbt['settings']['project']
     pr = rbt['count']
-    client = MongoClient(address, port)
-    db = client[project]
-    browser = sina_login(rbt['account'])
+    client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
+    db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
         count = db.users.find({'path': []}).count()
         slc = count / pr
         users = db.users.find({'path': []}).skip(slc * rbt['id']).limit(slc)
-        parse_path(db, browser, users)
+        parse_path(users, rbt, db)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
         #   i += 1
     except KeyboardInterrupt:
         log(ERROR, "Program is interrupted.", 'path_crawling')
     finally:
-        browser.close()
-        unregister(rbt['settings'], address)
+        unregister(rbt)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 

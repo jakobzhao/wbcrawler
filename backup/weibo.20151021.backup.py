@@ -19,7 +19,110 @@ from selenium.common.exceptions import TimeoutException
 
 from pyvirtualdisplay import Display
 
-from PIL import Image, ImageDraw
+from wbcrawler.utils import get_interval_as_human
+from wbcrawler.settings import TIMEOUT
+from wbcrawler.log import *
+
+
+def get_response_as_human(browser, url, page_reload=True):
+    url_raw = url
+    response_data = ''
+    waiting = get_interval_as_human()
+    if page_reload:
+        while True:
+            try:
+                browser.get(url_raw)
+                time.sleep(waiting)
+                response_data = browser.page_source
+                if response_data != {}:
+                    break
+            except TimeoutException:
+                url_raw = browser.current_url
+                log(NOTICE, 'Web page refreshing')
+    else:
+        try:
+            browser.get(url_raw)
+            time.sleep(waiting)
+        except TimeoutException:
+            log(WARNING, 'timeout', 'get_response_as_human')
+    return response_data
+
+
+def sina_login(account):
+    username = account[0]
+    password = account[1]
+    id = account[2]
+    # chromedriver = CHROME_PATH
+    # os.environ["webdr.chrome.driver"] = chromedriver
+    # browser = webdriver.Chrome(chromedriver)
+    if "Linux" in platform.platform():
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
+
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+
+    browser = webdriver.Firefox(firefox_profile=firefox_profile)
+
+    # browser = webdriver.Firefox()
+    browser.set_window_size(960, 1050)
+    browser.set_window_position(0, 0)
+    browser.set_page_load_timeout(TIMEOUT)
+    browser.set_script_timeout(TIMEOUT)
+    # visit the sina login page
+    login_url = "https://login.sina.com.cn/"
+    browser.get(login_url)
+
+    # input username
+    # user = browser.find_element_by_id('username')
+    user = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'username')))
+    user.clear()
+    user.send_keys(username, Keys.ARROW_DOWN)
+
+    # input the passowrd
+    passwd = WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.ID, 'password')))
+    passwd.clear()
+    passwd.send_keys(password, Keys.ARROW_DOWN)
+
+    weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
+
+    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
+    weibo_tab = browser.find_element_by_xpath(weibo_tab_xpath)
+    weibo_tab.send_keys(Keys.CONTROL + Keys.RETURN)
+
+    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
+    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
+
+    log(NOTICE, 'ROBOT %d has logged in.' % id)
+
+    return browser
+
+
+
+# !/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Created on Oct 16, 2015
+# @author:       Bo Zhao
+# @email:        bo_zhao@hks.harvard.edu
+# @website:      http://yenching.org
+# @organization: Harvard Kennedy School
+
+import time
+import platform
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+
+from pyvirtualdisplay import Display
+
+from bs4 import BeautifulSoup
 
 from utils import get_interval_as_human
 from settings import TIMEOUT

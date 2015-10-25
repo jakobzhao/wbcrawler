@@ -12,7 +12,7 @@ sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 
 # libraries
-from wbcrawler.database import unlock_robots
+from wbcrawler.robot import unlock_robots
 from settings import SETTINGS
 
 # variables

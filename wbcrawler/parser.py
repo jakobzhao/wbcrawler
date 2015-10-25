@@ -18,13 +18,15 @@ from utils import get_interval_as_human
 from log import *
 from decode import mid_to_token
 from geo import geocode
-from weibo import get_response_as_human
+from utils import get_response_as_human
 from pymongo import MongoClient
 
 
-def parse_keyword(keyword, browser, settings):
-    client = MongoClient(settings['address'], settings['port'])
-    db = client[settings['project']]
+def parse_keyword(keyword, robot, db):
+    # client = MongoClient(settings['address'], settings['port'])
+    # db = client[settings['project']]
+    browser = robot['browser']
+    settings = robot['settings']
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
@@ -323,9 +325,10 @@ def deleted(post, db):
     return True
 
 
-def parse_repost(browser, posts, settings):
-    client = MongoClient(settings['address'], settings['port'])
-    db = client[settings['project']]
+def parse_repost(posts, robot, db):
+    settings = robot['settings']
+    browser = robot['browser']
+
     # flow control
     # As for now, only calculate the reposts with a fwd count larger than 10
     count = posts._Cursor__limit
@@ -357,8 +360,8 @@ def parse_repost(browser, posts, settings):
             continue
 
         if "weibo.com/login.php" in browser.current_url:
-            log(WARNING, "This robot is watched by the Weibo server when visiting %s" % url)
-            return
+            log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
+            return False
         # test
         # f = open("../data/parse_repost_%s.html" % post['mid'], "w")
         # f.write(str(rd))
@@ -486,9 +489,10 @@ def parse_repost(browser, posts, settings):
         return True
 
 
-def parse_info(db, browser, users):
+def parse_info(users, robot, db):
     # STEP ONE：already got the latlng from the content
     # users = db.users.find({'latlng': [0, 0]}, no_cursor_timeout=True).limit(100)
+    browser = robot['browser']
     count = users._Cursor__limit
     all = users.count()
     start_from = users._Cursor__skip
@@ -499,8 +503,8 @@ def parse_info(db, browser, users):
         cur += 1
         start = datetime.datetime.now()
         if "weibo.com/login.php?url=" in browser.current_url:
-            log(WARNING, "This robot is watched by the mobile weibo.cn server when visiting %s" % url)
-            return
+            log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
+            return False
         if 'location' in user.keys():
             if user['location'] == u'其他' or user['location'] == u'未知':
                 continue
@@ -575,9 +579,11 @@ def parse_info(db, browser, users):
             log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
     return
 
-def parse_path(db, browser, users):
+
+def parse_path(users, robot, db):
     # STEP ONE：already got the latlng from the content
     # modify the default timeout. Usually, the func parse_path takes longer than other funcs.
+    browser = robot['browser']
     browser.set_page_load_timeout(4 * TIMEOUT)
     count = users._Cursor__limit
     all = users.count()
@@ -598,9 +604,9 @@ def parse_path(db, browser, users):
             browser.set_page_load_timeout(TIMEOUT)
             continue
         if "weibo.com/login.php?url=" in browser.current_url:
-            log(WARNING, "This robot is watched by the place server when visiting %s" % url)
             browser.set_page_load_timeout(TIMEOUT)
-            return
+            log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
+            return False
 
         path = []
         if "noUserFeed" not in rd:

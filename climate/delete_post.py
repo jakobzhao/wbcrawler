@@ -15,7 +15,7 @@ sys.path.append("/home/bo/Workspace/wbcrawler/climate")
 
 from wbcrawler.log import *
 from settings import SETTINGS
-from wbcrawler.database import delete_post, traverse_post_delete
+from wbcrawler.robot import delete_post, traverse_post_delete
 
 mids = []
 

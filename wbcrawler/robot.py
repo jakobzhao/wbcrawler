@@ -102,21 +102,21 @@ def register(settings):
 
     if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
         log(NOTICE, 'ROBOT %d has not logged in.' % id)
-        db.accounts.update({'username': username}, {'$set': {"inused": None}})
+        # db.accounts.update({'username': username}, {'$set': {"inused": False}})
         return {}
     else:
         log(NOTICE, "ROBOT %d successfully passes Test One...." % id)
         passed = True
 
-    get_response_as_human(browser, test_urls[1])
-    if "weibo.com/login.php" in browser.current_url:
-        passed = False
-        log(NOTICE, 'ROBOT %d has not logged in.' % id)
-        db.accounts.update({'username': username}, {'$set': {"inused": None}})
-        return {}
-    else:
-        log(NOTICE, "ROBOT %d successfully passes Test Two...." % id)
-        passed = True
+    # get_response_as_human(browser, test_urls[1])
+    # if "weibo.com/login.php" in browser.current_url:
+    #     passed = False
+    #     log(NOTICE, 'ROBOT %d has not logged in.' % id)
+    #     db.accounts.update({'username': username}, {'$set': {"inused": None}})
+    #     return {}
+    # else:
+    #     log(NOTICE, "ROBOT %d successfully passes Test Two...." % id)
+    #     passed = True
 
     if passed:
         log(NOTICE, 'ROBOT %d has logged in.' % id)
@@ -137,6 +137,7 @@ def unregister(robot):
     robot.clear()
     del robot
     return True
+
 
 def create_database(settings, fresh=False):
     client = MongoClient(settings['address'], settings['port'])

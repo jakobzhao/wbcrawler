@@ -63,11 +63,11 @@ def create_robots(rr, pr, ir, settings):
 
     for robot in robots:
         if robot['type'] == 'repost':
-            robot['count'] = nrr
+            robot['count'] = nrr + 1
         elif robot['type'] == 'path':
-            robot['count'] = nrr
+            robot['count'] = nrr + 1
         elif robot['type'] == 'info':
-            robot['count'] = nrr
+            robot['count'] = nrr + 1
     return robots
 
 
@@ -143,10 +143,11 @@ def path_crawling(rbt):
 def parallel_crawling(rr, pr, ir, settings):
     # Make the Pool of workers
     pool = ThreadPool(rr + pr + ir)
-    robots = create_robots(rr, pr, ir, settings)
+
     # Open the urls in their own threads
     # and return the results
     try:
+        robots = create_robots(rr, pr, ir, settings)
         pool.map(crawling_job, robots)
     except NameError, e:
         log(FATALITY, 'NameError: ' + e.message, 'parallel_crawlling')

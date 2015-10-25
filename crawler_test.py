@@ -50,7 +50,6 @@ for keyword in SETTINGS['keywords']:
     # except KeyboardInterrupt, e:
 
 
-
 # out of the stak
 unregister(robot)
 log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))

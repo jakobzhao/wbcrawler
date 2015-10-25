@@ -97,9 +97,8 @@ def delete_post(mid, settings):
                     for r in rs:
                         r_mid = r['mid']
                         delete_post(r_mid, settings)
-    else:
-        return
     log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % mid)
+    return
 
 
 def traverse_post_delete(settings):
@@ -125,5 +124,5 @@ def traverse_post_delete(settings):
                     for r in rs:
                         r_mid = r['mid']
                         delete_post(r_mid, settings)
-    else:
-        return
+        else:
+            continue

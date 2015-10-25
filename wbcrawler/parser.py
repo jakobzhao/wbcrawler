@@ -7,7 +7,7 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-from httplib import BadStatusLine as bs
+from httplib import BadStatusLine
 import time
 
 from bs4 import BeautifulSoup
@@ -63,7 +63,7 @@ def parse_keyword(keyword, browser, settings):
             try:
                 db.posts.insert_one(json_data['post'])
             except KeyError, e:
-                log(ERROR, 'BeautifulSoup does not work properly.')
+                log(ERROR, 'BeautifulSoup does not work properly.' + e.message)
             except errors.DuplicateKeyError:
                 log(NOTICE, 'UPDATING...')
                 # update
@@ -468,7 +468,7 @@ def parse_repost(browser, posts, settings):
 
                         try:
                             repost_panel = BeautifulSoup(browser.page_source, 'html5lib').find("div", class_="WB_feed WB_feed_profile")
-                        except bs, e:
+                        except BadStatusLine, e:
                             log(ERROR, e.message)
                             break
                         if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']:

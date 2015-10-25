@@ -100,3 +100,30 @@ def delete_post(mid, settings):
     else:
         return
     log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % mid)
+
+
+def traverse_post_delete(settings):
+    client = MongoClient(settings['address'], settings['port'])
+    db = client[settings['project']]
+    content = ''
+    for post in db.posts.find_one({'delete': True}):
+        try:
+            content = post['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+        except:
+            continue
+        if "//" not in content:
+            for p in db.posts.find({'deleted': {'$ne': True}}):
+                try:
+                    ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+                except:
+                    continue
+                if content in ct:
+                    db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True}})
+                    db.posts.update_one({'mid': p['mid']}, {'$set': {'replies': []}})
+                    rs = p['replies']
+                    for r in rs:
+                        r_mid = r['mid']
+                        delete_post(r_mid, settings)
+    else:
+        return
+    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % mid)

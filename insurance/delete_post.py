@@ -15,10 +15,12 @@ sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
 from wbcrawler.log import *
 from settings import SETTINGS
-from wbcrawler.database import delete_post
+from wbcrawler.database import delete_post, traverse_post_delete
 
 mids = []
 
 for mid in mids:
     delete_post(mid, SETTINGS)
     log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)
+
+traverse_post_delete(SETTINGS)

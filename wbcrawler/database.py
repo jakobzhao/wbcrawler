@@ -88,7 +88,11 @@ def delete_post(mid, settings):
             for p in db.posts.find({'deleted': {'$ne': True}}):
                 # print content
                 # print p['content']
-                if content in p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'):
+                try:
+                    ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+                except:
+                    continue
+                if content in ct:
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True}})
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'replies': []}})
                     rs = p['replies']

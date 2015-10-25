@@ -64,14 +64,14 @@ def brief_report(settings):
     line_6 = "Users with paths / not: %d / %d" % (count_7, total_users - count_7)
     line_7 = "Geocoded users / not: %d / %d" % (count_6, total_users - count_6)
 
-    msg = '''From: Crawler Server <snsgis@gmail.com>
+    msg = '''From: Weibo Crawler Server <snsgis@gmail.com>
 To: ''' + pi_str[:-1] + '''
 Subject: [''' + t + '''] Daily Briefing for ''' + project.capitalize() + ''' Project
 MIME-Version: 1.0
 
 Dear PI(s),
 
-Here is a brief report about the progress of data harvest:
+Here is a briefing about the progress of Weibo data harvest:
 
      ''' + line_1 + '''
      ''' + line_2 + '''
@@ -81,7 +81,7 @@ Here is a brief report about the progress of data harvest:
      ''' + line_6 + '''
      ''' + line_7 + '''
 --
-Sent from Weibo Cralwer Server'''
+Sent from the Weibo Cralwer Server.'''
     # The actual mail send
     try:
         server = smtplib.SMTP()

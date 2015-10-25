@@ -152,7 +152,7 @@ def create_database(settings, fresh=False):
 
     posts.create_index([("mid", DESCENDING)], unique=True, sparse=True)
     users.create_index([("userid", DESCENDING)], unique=True)
-    posts.delete_many({"mid": null})
+    posts.delete_many({"mid": None})
     return db
 
 

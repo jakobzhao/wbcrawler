@@ -110,19 +110,18 @@ def traverse_post_delete(settings):
             content = post['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
         except:
             continue
-        if "//" not in content and content != '':
-            for p in db.posts.find({'deleted': {'$ne': True}}):
-                try:
-                    ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
-                except:
-                    continue
-                if content in ct:
-                    db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True}})
-                    db.posts.update_one({'mid': p['mid']}, {'$set': {'replies': []}})
-                    rs = p['replies']
-                    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % p['mid'])
-                    for r in rs:
-                        r_mid = r['mid']
-                        delete_post(r_mid, settings)
+        if "//" not in content and content != '' and content == '转发微博' and content == '轉發微博':
+            for p in db.posts.find({'and': [{'deleted': {'$ne': True}}, {'content': {'$regex': content}}]}):
+                # try:
+                #     ct = p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+                # except:
+                #     continue
+                # if content in ct:
+                db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True, 'replies': []}})
+                rs = p['replies']
+                log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': True}." % p['mid'])
+                for r in rs:
+                    r_mid = r['mid']
+                    delete_post(r_mid, settings)
         else:
             continue

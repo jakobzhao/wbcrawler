@@ -28,17 +28,25 @@ def parse_keyword(keyword, browser, settings):
     url = 'http://s.weibo.com/weibo/' + keyword  # + '&nodup=1'
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
+    stop_flag = False
 
     # calculating the number of pages
-    try:
+    # i = 0
+    # while i <3:
+    # try:
+    #    pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
+    # except AttributeError:
+    #    log(NOTICE, "No pagelist element, so the robot is forced to log out.")
+    #    return
+
+    if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
+        log(WARNING, "No pagelist element is detected, meaning the robot is not properly logged on, so forced to log out.")
+        return stop_flag
+    else:
         pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
-    except AttributeError:
-        log(NOTICE, "No pagelist element, so the robot is forced to log out.")
-        return 0
 
     log(NOTICE, 'KEYWORD "%s" contains %d pages.' % (keyword.decode("utf-8", "ignore"), pages))
 
-    stop_flag = False
     for i in range(pages):
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
         log(NOTICE, 'processing the webpage %s...' % url.decode("utf-8"))
@@ -95,6 +103,7 @@ def parse_keyword(keyword, browser, settings):
             break
             # print "The keyword %s has been parsed." % keyword.decode('utf-8')
         log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
+        return True
 
 
 def update_keyword(keyword, now):
@@ -311,7 +320,7 @@ def deleted(post, db):
         }
         })
     log(NOTICE, "This post has been deleted by either the author or the censors.")
-    return 0
+    return True
 
 
 def parse_repost(browser, posts, settings):
@@ -474,6 +483,7 @@ def parse_repost(browser, posts, settings):
                         if flag != repost_panel.findAll("div", {'action-type': 'feed_list_item'})[-1].attrs['mid']:
                             break
         log(NOTICE, 'All reposts of this post has been processed.')
+        return True
 
 
 def parse_info(db, browser, users):
@@ -563,7 +573,7 @@ def parse_info(db, browser, users):
             pass
         finally:
             log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
-
+    return
 
 def parse_path(db, browser, users):
     # STEP ONE：already got the latlng from the content
@@ -665,3 +675,4 @@ def parse_path(db, browser, users):
             log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
     # change to the original timeout
     browser.set_page_load_timeout(TIMEOUT)
+    return True

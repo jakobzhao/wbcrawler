@@ -7,23 +7,18 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-import time
-import platform
-
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import time
+import platform
 from pymongo import MongoClient, DESCENDING
-
 from utils import get_response_as_human
-
 from pyvirtualdisplay import Display
-
 from bs4 import BeautifulSoup
-
 from settings import TIMEOUT
 from log import *
 
@@ -155,8 +150,9 @@ def create_database(settings, fresh=False):
         db.posts.delete_many({})
         db.users.delete_many({})
 
-    posts.create_index([("mid", DESCENDING)], unique=True)
+    posts.create_index([("mid", DESCENDING)], unique=True, sparse=True)
     users.create_index([("userid", DESCENDING)], unique=True)
+    posts.delete_many({"mid": null})
     return db
 
 

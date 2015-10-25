@@ -9,16 +9,15 @@
 
 from httplib import BadStatusLine
 import time
-
 from bs4 import BeautifulSoup
 from pymongo import errors
 
 from settings import TIMEOUT, UTC, TZCHINA
 from utils import get_interval_as_human
-from log import *
 from decode import mid_to_token
 from geo import geocode
 from utils import get_response_as_human
+from log import *
 
 
 def parse_keyword(keyword, robot, db):
@@ -30,15 +29,6 @@ def parse_keyword(keyword, robot, db):
     rd = get_response_as_human(browser, url)
     soup = BeautifulSoup(rd, 'html5lib')
     stop_flag = False
-
-    # calculating the number of pages
-    # i = 0
-    # while i <3:
-    # try:
-    #    pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
-    # except AttributeError:
-    #    log(NOTICE, "No pagelist element, so the robot is forced to log out.")
-    #    return
 
     if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
         log(WARNING, "No pagelist element is detected, meaning the robot is not properly logged on, so forced to log out.")
@@ -54,11 +44,6 @@ def parse_keyword(keyword, robot, db):
         rd = get_response_as_human(browser, url)
         # soup =
         posts = BeautifulSoup(rd, 'html5lib').findAll('div', {'action-type': 'feed_list_item'})
-
-        # Test
-        # f = open("../data/parse_keyword_posts" + toPinyin(keyword) + ".html", "w")
-        # f.write(rd)
-        # f.close()
 
         start = datetime.datetime.now()
         log(NOTICE, "%d posts in Page %d" % (len(posts), pages))

@@ -10,7 +10,6 @@
 # libraries
 import socket
 import smtplib
-
 from pymongo import MongoClient
 
 from wbcrawler.settings import EMAIL_PASSWORD
@@ -20,7 +19,6 @@ from wbcrawler.log import *
 # receiver string
 # example rief_report('jakobzhao@gmail.com;bo_zhao@hks.harvard.edu', "weibo")
 # funcs
-
 
 def brief_report(settings):
     pis = settings['pis']

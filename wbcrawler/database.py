@@ -82,4 +82,4 @@ def delete_post(mid, settings):
             delete_post(reply_mid, settings)
     else:
         return
-    log(NOTICE, "The specified post and its replies have been marked as {'deleted': true}." % mid)
+    log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': true}." % mid)

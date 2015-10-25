@@ -76,7 +76,7 @@ def delete_post(mid, settings):
         post = db.posts.find_one({'mid': mid})
         replies = post['replies']
         content = post['content']
-        print content
+        # print content
         db.posts.update_one({'mid': mid}, {'$set': {'deleted': True}})
         db.posts.update_one({'mid': mid}, {'$set': {'replies': []}})
         for reply in replies:
@@ -86,9 +86,9 @@ def delete_post(mid, settings):
         if "//" not in content:
             print content
             for p in db.posts.find({'deleted': {'$ne': True}}):
-                print content
-                print p['content']
-                if content in p['content']:
+                # print content
+                # print p['content']
+                if content in p['content'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'):
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'deleted': True}})
                     db.posts.update_one({'mid': p['mid']}, {'$set': {'replies': []}})
                     rs = p['replies']

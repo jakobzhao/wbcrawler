@@ -5,7 +5,5 @@
 # Harvard Kennedy School
 # Bo Zhao
 # bo_zhao@hks.harvard.edu
-sudo pkill firefox
-sudo pkill Xvfb
-# sudo rm -rf /tmp
-sudo free -m
+echo "the crawler has rebooted."
+sudo shutdown -r now

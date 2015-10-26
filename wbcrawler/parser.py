@@ -420,7 +420,7 @@ def parse_repost(posts, robot, db):
                 if delta > settings['replies_control_days'] and i != 0:
                     stop = True
                     break
-
+                # ==============================IMPORTANT==================================
                 if item_json['reply']['mid'] not in mids:  # and delta < FLOW_CONTROL_DAYS:
                     # insert a user
                     try:

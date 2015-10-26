@@ -11,19 +11,15 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
+sys.path.append("/home/bo/Workspace/wbcrawler/gov")
 
 from wbcrawler.parser import parse_keyword
 from wbcrawler.robot import register, unregister, create_database, unlock_robots
 from wbcrawler.log import *
 from settings import SETTINGS
 
-
-# KEYWORDS_CLIMATE = ['气候变化', '全球变暖']
-# KEYWORDS = ['中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会', '居委会']
-# KEYWORDS = ['气候变化', '全球变暖']
-
 # First Round: 129 minutes
-
+# Second Round: 11 minutes
 # unlock the unreleased robots
 unlock_robots(SETTINGS)
 

@@ -7,16 +7,15 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-
 SETTINGS = {
-    'project': 'insurance',
-    'pis': ['jakobzhao@gmail.com', 'pku_fenglin@163.com'],
+    'project': 'gov',
+    'pis': ['jakobzhao@gmail.com'],
     'account_db': 'local',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 3,
-    'keywords': ['社保', '商业保险', '社会保险', '医疗保险', '医保', '医院%20报销'],
-    'control_days': 365,
-    'replies_control_days': 365,
+    'robot_num': 6,
+    'keywords': ['中央政府', '地方政府', '省政府', '市政府', '县政府', '区政府', '乡政府', '镇政府', '街道办', '村委会', '居委会'],
+    'control_days': 183,
+    'replies_control_days': 183,
     'min_fwd_times': 5
 }

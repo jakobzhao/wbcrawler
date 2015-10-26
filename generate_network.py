@@ -14,4 +14,4 @@ address = "localhost"
 port = 27017
 project = 'five'
 
-generate_network(project, address, port, output="sample.gexf")
+generate_network(project, address, port, output="sample_five.gexf")

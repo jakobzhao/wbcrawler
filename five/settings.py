@@ -17,5 +17,5 @@ SETTINGS = {
     'keywords': ['五中全会'],
     'control_days': 150,
     'replies_control_days': 150,
-    'min_fwd_times': 5
+    'min_fwd_times': 20
 }

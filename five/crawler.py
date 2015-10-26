@@ -21,7 +21,9 @@ from settings import SETTINGS
 # First Round: 129 minutes
 # Second Round: 11 minutes
 # unlock the unreleased robots
-unlock_robots(SETTINGS)
+# unlock_robots(SETTINGS)
+# [2] 10/26 3:43 AM EST
+
 
 # start to crawl
 start = datetime.datetime.now()

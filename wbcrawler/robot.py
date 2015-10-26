@@ -97,6 +97,7 @@ def register(settings):
 
     if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
         log(NOTICE, 'ROBOT %d has not logged in.' % id)
+        browser.close()
         # db.accounts.update({'username': username}, {'$set': {"inused": False}})
         return {}
     else:
@@ -107,6 +108,7 @@ def register(settings):
     # if "weibo.com/login.php" in browser.current_url:
     #     passed = False
     #     log(NOTICE, 'ROBOT %d has not logged in.' % id)
+    #     browser.close()
     #     db.accounts.update({'username': username}, {'$set': {"inused": None}})
     #     return {}
     # else:

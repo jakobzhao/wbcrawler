@@ -11,7 +11,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 from multiprocessing.dummy import Lock
 import socket
 
-from pymongo import MongoClient
+from pymongo import MongoClient, DESCENDING
 from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
 from wbcrawler.robot import register, unregister
@@ -42,7 +42,7 @@ def create_robots(rr, pr, ir, settings):
             if robot_id < rr:  # repost
                 robot['type'] = 'repost'
                 robots.append(robot)
-            elif robot_id in range(robot_id, rr + pr):  # path
+            elif robot_id in range(rr, rr + pr):  # path
                 robot['type'] = 'path'
                 robots.append(robot)
             elif robot_id >= rr + pr:  # info
@@ -63,11 +63,11 @@ def create_robots(rr, pr, ir, settings):
 
     for robot in robots:
         if robot['type'] == 'repost':
-            robot['count'] = nrr + 1
+            robot['count'] = nrr
         elif robot['type'] == 'path':
-            robot['count'] = nrr + 1
+            robot['count'] = npr
         elif robot['type'] == 'info':
-            robot['count'] = nrr + 1
+            robot['count'] = nir
     return robots
 
 
@@ -92,8 +92,8 @@ def repost_crawling(rbt):
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$ne": True}}).count()
         slc = count / rr
-        # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).sort({'mid': -1}).skip(slc * rbt['id']).limit(slc)
-        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
+        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).sort([('mid', DESCENDING)]).skip(slc * rbt['id']).limit(slc)
+        # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
         parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:

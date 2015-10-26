@@ -123,7 +123,11 @@ def register(settings):
 
 def unregister(robot):
     # {'$set': {'inused': false}}
-    robot['browser'].close()
+    browser = robot['browser']
+    try:
+        robot['browser'].close()
+    except:
+        browser.close()
     settings = robot['settings']
     account = robot['account']
     client = MongoClient(settings['address'], settings['port'])

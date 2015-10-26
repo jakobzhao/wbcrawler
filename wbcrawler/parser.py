@@ -421,7 +421,6 @@ def parse_repost(posts, robot, db):
                     break
 
                 if item_json['reply']['mid'] not in mids:  # and delta < FLOW_CONTROL_DAYS:
-
                     # insert a user
                     try:
                         db.users.insert_one(item_json['user'])
@@ -435,7 +434,6 @@ def parse_repost(posts, robot, db):
                         except errors.DuplicateKeyError:
                             log(NOTICE, 'duplicated none deleted.')
 
-
                     db.posts.update(
                         {'mid': post['mid']},
                         {'$push': {'replies': item_json['reply']
@@ -445,7 +443,7 @@ def parse_repost(posts, robot, db):
                     # insert the reply as a new post
                     try:
                         db.posts.insert_one(item_json['reply'])
-                    except errors.DuplicateKeyError, e:
+                    except errors.DuplicateKeyError:
                         log(NOTICE, 'This post has already been inserted.')
 
             if stop:

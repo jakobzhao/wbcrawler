@@ -74,7 +74,7 @@ def register(settings):
 
     # press click and then the vcode appears.
     browser.find_element_by_class_name('smb_btn').click()
-    time.sleep(5)
+    time.sleep(3)
 
     weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
 
@@ -83,7 +83,7 @@ def register(settings):
     weibo_tab.send_keys(Keys.CONTROL + Keys.RETURN)
 
     WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
-    time.sleep(10)
+    time.sleep(5)
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 

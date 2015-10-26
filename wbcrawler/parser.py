@@ -363,7 +363,8 @@ def parse_repost(posts, robot, db):
             # deleted(post, db)
             log(NOTICE, "The repost at %s has been deleted. the feed handle is None" % url)
             continue
-
+        cmt_count = 0
+        fwd_count = 0
         for li in repost_panel.find("div", class_="WB_feed_handle").findAll("li"):
             txt = li.get_text().lstrip().rstrip()
             if u"转发" in txt:

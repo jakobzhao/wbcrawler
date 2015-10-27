@@ -15,7 +15,7 @@ from pymongo import MongoClient
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-address = "localhost"
+address = "192.168.1.12"
 port = 27017
 client = MongoClient(address, port)
 db = client['weibo']

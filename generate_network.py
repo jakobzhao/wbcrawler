@@ -10,8 +10,8 @@
 from wbcrawler.sna import generate_network
 
 # Variables
-address = "localhost"
+address = "192.168.1.12"
 port = 27017
 project = 'five'
 
-generate_network(project, address, port, output="sample_five.gexf")
+generate_network(project, address, port, output="sample2.gexf")

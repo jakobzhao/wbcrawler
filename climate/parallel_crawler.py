@@ -19,10 +19,13 @@ from wbcrawler.parallel import parallel_crawling
 from wbcrawler.robot import unlock_robots
 
 # funcs
+print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 unlock_robots(SETTINGS)
 parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
+print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 unlock_robots(SETTINGS)
 parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
+print "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 unlock_robots(SETTINGS)
 parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
 unlock_robots(SETTINGS)

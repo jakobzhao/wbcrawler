@@ -13,7 +13,7 @@ SETTINGS = {
     'account_db': 'local',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 3,
+    'robot_num': 1,
     'keywords': ['气候变化', '全球变暖'],
     'control_days': 60,
     'replies_control_days': 60,

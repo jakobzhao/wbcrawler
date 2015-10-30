@@ -522,7 +522,7 @@ def parse_info(users, robot, db):
                         else:
                             gender = 'F'
                             # print gender
-                    if u'地区' in flds[i] and user['location'] == '':  # it is possible the location has already been obatained during the first round.
+                    if u'地区' in flds[i] and 'location' not in user.keys():  # it is possible the location has already been obatained during the first round.
                         loc = flds[i + 1][:-2]
                         loc = loc.replace(u"海外 ", "")
                     if u'认信' in flds[i]:
@@ -536,11 +536,11 @@ def parse_info(users, robot, db):
                     i += 1
 
                 # location info could be the very last line.
-                if u'地区' in flds[len(flds) - 2] and user['location'] == '':
+                if u'地区' in flds[len(flds) - 2] and 'location' not in user.keys():
                     loc = flds[len(flds) - 1]
                 # the value of 地区 could be 未知, 其他.
                 # now having the loc value,
-                if u'地区' not in info and user['location'] == '':
+                if u'地区' not in info and 'location' not in user.keys():
                     loc = u"未知"
                     latlng = [-1, -1]
                 elif loc == u"其他":

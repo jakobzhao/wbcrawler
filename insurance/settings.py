@@ -17,6 +17,6 @@ SETTINGS = {
     'robot_num': 1,
     'keywords': ['社保', '商业保险', '社会保险', '医疗保险', '医保', '医院%20报销'],
     'control_days': 30,
-    'replies_control_days': 30,
+    'replies_control_days': 20,
     'min_fwd_times': 10
 }

@@ -11,7 +11,8 @@ from wbcrawler.sna import generate_network
 
 # Variables
 address = "192.168.1.12"
+address = "localhost"
 port = 27017
 project = 'five'
 
-generate_network(project, address, port, output="sample2.gexf")
+generate_network(project, address, port, output="sample3.gexf")

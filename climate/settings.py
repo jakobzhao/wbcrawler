@@ -17,5 +17,5 @@ SETTINGS = {
     'keywords': ['气候变化', '全球变暖'],
     'control_days': 30,
     'replies_control_days': 20,
-    'min_fwd_times': 10
+    'min_fwd_times': 5
 }

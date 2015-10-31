@@ -40,13 +40,12 @@ def parse_keyword(keyword, robot, db):
     log(NOTICE, 'KEYWORD "%s" contains %d pages.' % (keyword.decode("utf-8", "ignore"), pages))
 
     for i in range(pages):
+        start = datetime.datetime.now()
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
         log(NOTICE, 'processing the webpage %s...' % url.decode("utf-8"))
         rd = get_response_as_human(browser, url)
         # soup =
         posts = BeautifulSoup(rd, 'html5lib').findAll('div', {'action-type': 'feed_list_item'})
-
-        start = datetime.datetime.now()
         log(NOTICE, "%d posts in Page %d" % (len(posts), pages))
         for post in posts:
             json_data = parse_post(post, keyword)
@@ -387,7 +386,7 @@ def parse_repost(posts, robot, db):
         # ======================= flow size control ==========================
         replies_num = len(post['replies'])
         if fwd_count == 0 or fwd_count == 1:
-            continue
+            pass
         elif fwd_count in range(2, 100):
             if replies_num / (fwd_count * 1.0) > 0.5:
                 continue

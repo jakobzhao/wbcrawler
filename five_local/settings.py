@@ -13,9 +13,9 @@ SETTINGS = {
     'account_db': 'local',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 3,
+    'robot_num': 10,
     'keywords': ['五中全会'],
-    'control_days': 30,
+    'control_days': 15,
     'replies_control_days': 3,
-    'min_fwd_times': 5
+    'min_fwd_times': 20
 }

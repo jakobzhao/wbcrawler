@@ -18,6 +18,7 @@ from decode import mid_to_token
 from geo import geocode
 from utils import get_response_as_human
 from log import *
+from math import log10
 
 
 def parse_keyword(keyword, robot, db):
@@ -382,6 +383,18 @@ def parse_repost(posts, robot, db):
                 'cmt_count': cmt_count,
                 'like_count': like_count
             }})
+
+        # ======================= flow size control ==========================
+        replies_num = len(post['replies'])
+        if fwd_count == 0 or fwd_count == 1:
+            continue
+        elif fwd_count in range(2, 100):
+            if replies_num / (fwd_count * 1.0) > 0.5:
+                continue
+        else:
+            if fwd_count / (fwd_count * 1.0) > log10(fwd_count):
+                continue
+        # ======================= flow size control ==========================
 
         # 2.2  harvest and flow size control
         # num_replies = 0

@@ -53,8 +53,11 @@ def register(settings):
     browser = webdriver.Firefox(firefox_profile=firefox_profile)
 
     # browser = webdriver.Firefox()
+    # browser = webdriver.PhantomJS(executable_path=r'C:\Workspace\phantomjs\bin\phantomjs.exe')
+
     browser.set_window_size(960, 1050)
     browser.set_window_position(0, 0)
+
     browser.set_page_load_timeout(TIMEOUT)
     browser.set_script_timeout(TIMEOUT)
     # visit the sina login page
@@ -101,7 +104,7 @@ def register(settings):
         # db.accounts.update({'username': username}, {'$set': {"inused": False}})
         return {}
     else:
-        log(NOTICE, "ROBOT %d successfully passes Test One...." % id)
+        log(NOTICE, "ROBOT %d successfully passes Test One..." % id)
         passed = True
 
     # get_response_as_human(browser, test_urls[1])
@@ -112,7 +115,7 @@ def register(settings):
     #     db.accounts.update({'username': username}, {'$set': {"inused": None}})
     #     return {}
     # else:
-    #     log(NOTICE, "ROBOT %d successfully passes Test Two...." % id)
+    #     log(NOTICE, "ROBOT %d successfully passes Test Two..." % id)
     #     passed = True
 
     if passed:

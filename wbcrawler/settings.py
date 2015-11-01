@@ -10,10 +10,8 @@
 from pytz import timezone
 TZCHINA = timezone('Asia/Chongqing')
 UTC = timezone('UTC')
-DEBUG_PATH = '../log/'
 
 BAIDU_AK = 'Y4wB8DznamkwhY8RxDiYNSHS'
 PB_KEY = 'bYJFjyvIYWbn5vg2eNiFmcapjLu1PUTL'
 EMAIL_PASSWORD = 'nanjing1212'
-
 TIMEOUT = 60

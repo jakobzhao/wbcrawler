@@ -7,28 +7,53 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-import sys
+from snownlp import sentiment
+from log import *
+from os import remove
 
-from snownlp import SnowNLP as sn
-from pymongo import MongoClient
+proj = "five_local"
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
 
-address = "192.168.1.12"
-port = 27017
-client = MongoClient(address, port)
-db = client['weibo']
+def sentiment_training(project):
+    start = datetime.datetime.now()
+    path = '../%s/' % project
 
-posts = db.posts.find().limit(100)
+    neg_file = '%snegative.txt' % path
+    pos_file = '%spositive.txt' % path
 
-for post in posts:
-    a = post['content'].decode('utf-8').replace("转发微博", "").replace('//', '').replace("@", "")
-    try:
-        s_a = sn(a)
-    except ZeroDivisionError:
-        pass
-    print "%f, %s \n" % (s_a.sentiments, a.decode('utf-8', 'ignore').encode('gbk', 'ignore'))
+    neg_tmpfile = '%snegative_tmp.txt' % path
+    pos_tmpfile = '%spositive_tmp.txt' % path
 
-if __name__ == '__main__':
-    pass
+    f_s = open(pos_file, 'r')
+    data_pos = f_s.read()
+    f_s = open('training_set/keenage_positive.txt', 'r')
+    data_keenage_pos = f_s.read()
+    f_s = open('training_set/ntusd_positive.txt', 'r')
+    data_ntusd_pos = f_s.read()
+
+    f_t = open(pos_tmpfile, 'w')
+    f_t.write(data_pos + '\n' + data_keenage_pos + '\n' + data_ntusd_pos + '\n')
+
+    f_s = open(neg_file, 'r')
+    data_neg = f_s.read()
+    f_s = open('training_set/keenage_negative.txt', 'r')
+    data_keenage_neg = f_s.read()
+    f_s = open('training_set/ntusd_negative.txt', 'r')
+    data_ntusd_neg = f_s.read()
+
+    f_t = open(neg_tmpfile, 'w')
+    f_t.write(data_neg + '\n' + data_keenage_neg + '\n' + data_ntusd_neg + '\n')
+
+    f_t.close()
+    f_s.close()
+
+    sentiment.train(neg_tmpfile, pos_tmpfile)
+    sentiment.save(path + 'sentiment.marshal')
+
+    remove(neg_tmpfile)
+    remove(pos_tmpfile)
+    log(NOTICE, 'the sentiment file has generated. Time: %d sec(s)' % int((datetime.datetime.now() - start).seconds))
+    return
+
+
+sentiment_training(proj)

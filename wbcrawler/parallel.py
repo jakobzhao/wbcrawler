@@ -18,6 +18,7 @@ from wbcrawler.robot import register, unregister
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
 from httplib import BadStatusLine
+from urllib2 import URLError
 
 start = datetime.datetime.now()
 lock = Lock()
@@ -162,6 +163,8 @@ def parallel_crawling(rr, pr, ir, settings):
         log(FATALITY, "TimeoutException: Too many robots", 'parallel_crawlling')
     except socket.error:
         log(FATALITY, "SocketError: The browser is forced to close", 'parallel_crawlling')
+    except URLError, e:
+        log(FATALITY, "urllib2.URLError", 'parallel_crawlling')
     # except WindowsError, e:
     #     # [Error 32] The process cannot access the file because it is being used by another process:
     #     # 'c:\\users\\bo\\appdata\\local\\temp\\tmphrg3yv.webdriver.xpi\\resource\\modules\\web-element-cache.js'

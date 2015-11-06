@@ -31,18 +31,18 @@ for post in posts:
 
     names = get_name_from_content(a)
 
-    if len(names) > 0:
-        try:
-            # print names[0].encode('gbk', 'ignore')
-            pass
-        except UnicodeEncodeError, e:
-            pass
+    # if len(names) > 0:
+    #     try:
+    #         # print names[0].encode('gbk', 'ignore')
+    #         pass
+    #     except UnicodeEncodeError, e:
+    #         pass
 
     url = ''
     if u'http://t.cn/' in a:
         url_start = a.find(u'http://t.cn/')
         url = a[url_start:url_start + 19]
-        print url
+        # print url
 
     a = a.replace(url, '').replace(u'//', '').replace(u'转发微博', '').replace(u'轉發微博', '').replace(u'repost', '')
 

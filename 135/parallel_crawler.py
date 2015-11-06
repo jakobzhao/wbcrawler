@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/gov")
+sys.path.append("/home/bo/Workspace/wbcrawler/135")
 
 from settings import SETTINGS
 from wbcrawler.parallel import parallel_crawling

@@ -15,7 +15,7 @@ SETTINGS = {
     'port': 27017,
     'robot_num': 1,
     'keywords': ['十三五'],
-    'control_days': 20,
-    'replies_control_days': 20,
+    'control_days': 30,
+    'replies_control_days': 30,
     'min_fwd_times': 5
 }

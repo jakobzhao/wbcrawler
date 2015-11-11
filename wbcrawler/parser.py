@@ -359,6 +359,7 @@ def parse_repost(posts, robot, db):
 
         # 2.1 the counts
         # counts
+
         if repost_panel.find("div", class_="WB_feed_handle") == None:
             # deleted(post, db)
             log(NOTICE, "The repost at %s has been deleted. the feed handle is None" % url)
@@ -388,10 +389,10 @@ def parse_repost(posts, robot, db):
         if fwd_count == 0 or fwd_count == 1:
             pass
         elif fwd_count in range(2, 100):
-            if replies_num / (fwd_count * 1.0) > 0.5:
+            if replies_num / float(fwd_count) > 0.5:
                 continue
         else:
-            if fwd_count / (fwd_count * 1.0) > log10(fwd_count):
+            if fwd_count / float(fwd_count) > log10(fwd_count):
                 continue
         # ======================= flow size control ==========================
 

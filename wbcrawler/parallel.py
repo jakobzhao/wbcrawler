@@ -21,7 +21,9 @@ from httplib import BadStatusLine
 from urllib2 import URLError
 
 start = datetime.datetime.now()
-lock = Lock()
+
+
+# lock = Lock()
 
 
 # calculate the sum of robots in each category
@@ -51,6 +53,7 @@ def create_robots(rr, pr, ir, settings):
                 robots.append(robot)
 
     nrr, npr, nir = 0, 0, 0
+
     for robot in robots:
         if robot['type'] == 'repost':
             robot['id'] = nrr
@@ -69,6 +72,7 @@ def create_robots(rr, pr, ir, settings):
             robot['count'] = npr
         elif robot['type'] == 'info':
             robot['count'] = nir
+
     return robots
 
 
@@ -91,9 +95,12 @@ def repost_crawling(rbt):
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$ne": True}}).count()
+        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']},
+                               "deleted": {"$eq": None}}).count()
         slc = count / rr
-        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).sort([('mid', DESCENDING), ('fwd_count', ASCENDING)]).skip(slc * rbt['id']).limit(slc)
+        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']},
+                               "deleted": {"$eq": None}}).sort([('mid', DESCENDING), ('fwd_count', ASCENDING)]).skip(
+            slc * rbt['id']).limit(slc)
         # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
         parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
@@ -178,3 +185,4 @@ def parallel_crawling(rr, pr, ir, settings):
 
     pool.close()
     pool.join()
+    return

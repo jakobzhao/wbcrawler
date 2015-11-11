@@ -91,7 +91,6 @@ def register(settings):
     browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
     # Examing the validity of the account
-
     test_urls = ['http://s.weibo.com/weibo/love', 'http://weibo.com/1642592432/D0EwmhebV?type=repost']
     passed = False
 

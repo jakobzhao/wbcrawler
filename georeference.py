@@ -7,7 +7,7 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-from wbcrawler.sna import generate_network
+from wbcrawler.geo import georeference
 
 # Variables
 # address = "192.168.1.12"
@@ -15,4 +15,4 @@ address = "localhost"
 port = 27017
 project = 'five'
 
-generate_network(project, address, port, "sample5.gexf", 2015, 10, 1)
+georeference(project, address, port)

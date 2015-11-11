@@ -47,8 +47,9 @@ def estimate_location_by_path(user):
         for latlng in path:
             avg_lat += latlng[0]
             avg_lng += latlng[1]
-        avg_lat = avg_lat / (1.0 * len(path))
-        avg_lng = avg_lng / (1.0 * len(path))
+
+        avg_lat /= float(len(path))
+        avg_lng /= float(len(path))
         distances = []
         for latlng in path:
             distances.append(abs(latlng[0] - avg_lat) + abs(latlng[1] - avg_lng))
@@ -61,3 +62,26 @@ def estimate_location_by_path(user):
         pass
 
     return est_latlng
+
+
+def georeference(project, address, port):
+    from pymongo import MongoClient
+    client = MongoClient(address, port)
+    db = client[project]
+    posts = db.posts.find()
+    count = db.posts.find().count()
+    i = 0
+    for post in posts:
+        userid = post['user']['userid']
+        user = db.users.find_one({'userid': userid})
+        i += 1
+        try:
+            db.posts.update({'mid': post['mid']}, {'$set': {
+                'latlng': [user['latlng'][0], user['latlng'][1]]
+            }
+            })
+            log(NOTICE, 'georeferencing #%d, %d posts remain. latlng: %s ' % (i, count - i, str(user['latlng'])))
+        except:
+            log(NOTICE, 'the user latlng does not exit')
+
+    log(NOTICE, "mission compeletes.")

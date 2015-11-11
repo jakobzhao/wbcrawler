@@ -20,7 +20,7 @@ from wbcrawler.robot import unlock_robots
 # repost, path, info = 2, 0, 0
 
 # funcs
-# unlock_robots(SETTINGS)
+unlock_robots(SETTINGS)
 parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
 unlock_robots(SETTINGS)
 parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)

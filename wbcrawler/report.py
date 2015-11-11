@@ -25,6 +25,7 @@ def brief_report(settings):
     project = settings['project']
     address = settings['address']
     port = settings['port']
+    robot_table = settings['robot_table']
 
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'
@@ -39,10 +40,19 @@ def brief_report(settings):
     utc_now_2 = now - datetime.timedelta(days=2)
     utc_now_5 = now - datetime.timedelta(days=5)
 
-    client = MongoClient(address, port)
-    inused = client.local.accounts.find({'inused': True}).count()
-    total = client.local.accounts.find().count()
+    # For robot information
+    if settings['remote'] is None:
+        client = MongoClient(settings['address'], settings['port'])
+        robot_table = settings['robot_table']
+    else:
+        client = MongoClient(settings['remote']['address'], settings['remote']['port'])
+        robot_table = settings['remote']['robot_table']
 
+    inused = client.local[robot_table].find({'inused': True}).count()
+    total = client.local[robot_table].find().count()
+
+    # For post information
+    client = MongoClient(address, port)
     db = client[project]
 
     total_posts = db.posts.find().count()

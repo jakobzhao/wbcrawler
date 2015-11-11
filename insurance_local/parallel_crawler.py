@@ -13,14 +13,19 @@ sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
-from wbcrawler.log import *
+# libraries
 from settings import SETTINGS
-from wbcrawler.robot import delete_post, traverse_post_delete
+from wbcrawler.parallel import parallel_crawling
+from wbcrawler.robot import unlock_robots
 
-mids = []
+# funcs
+unlock_robots(SETTINGS)
+parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
+unlock_robots(SETTINGS)
+parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
+unlock_robots(SETTINGS)
+parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
+unlock_robots(SETTINGS)
 
-for mid in mids:
-    delete_post(mid, SETTINGS)
-    log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)
-
-traverse_post_delete(SETTINGS)
+if __name__ == '__main__':
+    pass

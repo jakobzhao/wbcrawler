@@ -11,16 +11,15 @@ import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/gov")
+sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
 from wbcrawler.log import *
 from settings import SETTINGS
-from wbcrawler.robot import delete_post, traverse_post_delete
+
+# from wbcrawler.robot import mark_delete_time
 
 mids = []
 
-for mid in mids:
-    delete_post(mid, SETTINGS)
-    log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)
-
-traverse_post_delete(SETTINGS)
+# for mid in mids:
+#    mark_delete_time(mid, SETTINGS)
+#    log(NOTICE, 'the post %d and its accompanying replies have been deleted' % mid)

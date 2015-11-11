@@ -24,16 +24,20 @@ from log import *
 
 
 def register(settings):
-    client = MongoClient(settings['address'], settings['port'])
-    db = client[settings['account_db']]
+    if settings['remote'] is None:
+        client = MongoClient(settings['address'], settings['port'])
+        robot_table = settings['robot_table']
+    else:
+        client = MongoClient(settings['remote']['address'], settings['remote']['port'])
+        robot_table = settings['remote']['robot_table']
 
     # get a Robot from the database
-    if db.accounts.find({"inused": False}).count() == 0:
+    if client.local[robot_table].find({"inused": False}).count() == 0:
         occupied_msg = "All Robots are occupied, please try again later."
         log(FATALITY, occupied_msg)
         exit(-1)
 
-    account_raw = db.accounts.find({"inused": False}).limit(1)[0]
+    account_raw = client.local[robot_table].find({"inused": False}).limit(1)[0]
     log(NOTICE, 'ROBOT %d is registering...' % account_raw['id'])
 
     # sign in the robot
@@ -119,7 +123,7 @@ def register(settings):
 
     if passed:
         log(NOTICE, 'ROBOT %d has logged in.' % id)
-        db.accounts.update({'username': username}, {'$set': {"inused": True}})
+        client.local[robot_table].update({'username': username}, {'$set': {"inused": True}})
         return {'browser': browser, 'account': account, 'settings': settings}
 
 
@@ -132,9 +136,15 @@ def unregister(robot):
         browser.close()
     settings = robot['settings']
     account = robot['account']
-    client = MongoClient(settings['address'], settings['port'])
-    db = client[settings['account_db']]
-    db.accounts.update({'username': account[0]}, {'$set': {"inused": False}})
+
+    if settings['remote'] is None:
+        client = MongoClient(settings['address'], settings['port'])
+        robot_table = settings['robot_table']
+    else:
+        client = MongoClient(settings['remote']['address'], settings['remote']['port'])
+        robot_table = settings['remote']['robot_table']
+
+    client.local[robot_table].update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
 
     robot.clear()
@@ -165,11 +175,41 @@ def create_database(settings, fresh=False):
 
 
 def unlock_robots(settings):
-    client = MongoClient(settings['address'], settings['port'])
-    db = client[settings['account_db']]
-    db.accounts.update_many({'inused': True}, {'$set': {'inused': False}})
-    db.posts.delete_many({"mid": None})
+    if settings['remote'] is None:
+        client = MongoClient(settings['address'], settings['port'])
+        robot_table = settings['robot_table']
+    else:
+        client = MongoClient(settings['remote']['address'], settings['remote']['port'])
+        robot_table = settings['remote']['robot_table']
+
+    client.local[robot_table].update_many({'inused': True}, {'$set': {'inused': False}})
+    client[settings['project']].posts.delete_many({"mid": None})
     log(NOTICE, "All the robots have been unlocked.")
+
+
+# def delete_post_without_keywords(settings):
+#     client = MongoClient(settings['address'], settings['port'])
+#     db = client[settings['project']]
+#     deleted_time = datetime.datetime(2015, 11, 1, 0, 0, 0, 0)
+#
+#     # posts = db.posts.find({'fwd_count'})
+#     for post in posts:
+#         replies = post['replies']
+#         content = post['content']
+#         delete = True
+#         for keyword in settings['keywords']:
+#             if keyword in content:
+#                 delete = False
+#                 break
+#         if delete:
+#             db.posts.update_one({'mid': mid}, {'$set': {'deleted': deleted_time}})
+#             db.posts.update_one({'mid': mid}, {'$set': {'replies': []}})
+#             for reply in replies:
+#                 reply_mid = reply['mid']
+#                 delete_post_without_keywords(reply_mid, settings)
+#
+#     log(NOTICE, "The specified post %d and its replies have been marked as {'deleted': 2015-11-1}." % mid)
+#     return
 
 
 def delete_post(mid, settings):

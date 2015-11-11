@@ -10,7 +10,7 @@
 SETTINGS = {
     'project': 'gov',
     'pis': ['jakobzhao@gmail.com'],
-    'account_db': 'local',
+    'robot_table': 'accounts',
     'address': 'localhost',
     'port': 27017,
     'robot_num': 3,

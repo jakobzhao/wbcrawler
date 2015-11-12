@@ -16,6 +16,6 @@ SETTINGS = {
     'robot_num': 1,
     'keywords': ['十三五'],
     'control_days': 30,
-    'replies_control_days': 5,
+    'replies_control_days': 8,
     'min_fwd_times': 5
 }

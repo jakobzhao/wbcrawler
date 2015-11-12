@@ -13,6 +13,9 @@ sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/insurance")
 
+sys.path.append("C:/Workspace/wbcrawler")
+sys.path.append("C:/Workspace/wbcrawler/insurance")
+
 # libraries
 from settings import SETTINGS
 from wbcrawler.parallel import parallel_crawling
@@ -20,7 +23,7 @@ from wbcrawler.robot import unlock_robots
 
 # funcs
 unlock_robots(SETTINGS)
-parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
+# parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
 unlock_robots(SETTINGS)
 parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
 unlock_robots(SETTINGS)

@@ -169,6 +169,8 @@ def parallel_crawling(rr, pr, ir, settings):
         log(FATALITY, "SocketError: The browser is forced to close", 'parallel_crawlling')
     except URLError, e:
         log(FATALITY, "urllib2.URLError", 'parallel_crawlling')
+    except ValueError, e:
+        log(FATALITY, "ValueError: could not convert string to float", 'parallel_crawlling')
     # except WindowsError, e:
     #     # [Error 32] The process cannot access the file because it is being used by another process:
     #     # 'c:\\users\\bo\\appdata\\local\\temp\\tmphrg3yv.webdriver.xpi\\resource\\modules\\web-element-cache.js'

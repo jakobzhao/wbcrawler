@@ -392,7 +392,7 @@ def parse_repost(posts, robot, db):
             if replies_num / float(fwd_count) > 0.5:
                 continue
         else:
-            if fwd_count / float(fwd_count) > log10(fwd_count):
+            if replies_num / float(fwd_count) > (1 / float(log10(fwd_count))):
                 continue
         # ======================= flow size control ==========================
 

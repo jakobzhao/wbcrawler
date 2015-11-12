@@ -97,7 +97,8 @@ def repost_crawling(rbt):
         round_start = datetime.datetime.now()
         count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).count()
         slc = count / rr
-        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).sort([('mid', DESCENDING), ('fwd_count', ASCENDING)]).skip(slc * rbt['id']).limit(slc)
+        # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).sort([('mid', DESCENDING), ('fwd_count', ASCENDING)]).skip(slc * rbt['id']).limit(slc)
+        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).skip(slc * rbt['id']).limit(slc)
         # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}).skip(slc * rbt['id']).limit(slc)
         parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))

@@ -7,11 +7,11 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-from wbcrawler.geo import georeference
+from wbcrawler.geo import geocode_by_semantics
 
 # Variables
 
 address = "localhost"
 port = 27017
 project = 'five'
-georeference(project, address, port)
+geocode_by_semantics(project, address, port)

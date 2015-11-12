@@ -7,10 +7,7 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-from pymongo import MongoClient, DESCENDING, ASCENDING
 from wbcrawler.log import *
-from wbcrawler.utils import get_name_from_content
-from snownlp import SnowNLP as sn
 import sys
 
 reload(sys)

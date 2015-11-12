@@ -27,7 +27,7 @@ unlock_robots(SETTINGS)
 unlock_robots(SETTINGS)
 parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
 unlock_robots(SETTINGS)
-parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
+# parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
 unlock_robots(SETTINGS)
 
 if __name__ == '__main__':

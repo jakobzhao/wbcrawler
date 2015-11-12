@@ -14,7 +14,7 @@ SETTINGS = {
     'robot_table': 'accounts',
     'address': '192.168.1.10',
     'port': 27017,
-    'robot_num': 15,
+    'robot_num': 1,
     'keywords': ['社保', '商业保险', '社会保险', '医疗保险', '医保', '医院%20报销'],
     'control_days': 45,
     'replies_control_days': 45,

@@ -597,16 +597,16 @@ def parse_path(users, robot, db):
         # url example: http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
         log(NOTICE, "parsing the routes from %s." % user['username'])
-        rd = get_response_as_human(browser, url, page_reload=False)
+        rd = get_response_as_human(browser, url, page_reload=True)
 
         if rd == "":
-            db.users.update({'userid': user['userid']}, {'$set': {'path': [0, 0, datetime.datetime.now(TZCHINA)]}})
+            db.users.update({'userid': user['userid']}, {'$set': {'path': [[0, 0, datetime.datetime.now(TZCHINA)]]}})
             browser.set_page_load_timeout(TIMEOUT)
             continue
         if "weibo.com/login.php?url=" in browser.current_url:
             browser.set_page_load_timeout(TIMEOUT)
             log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
-            return False
+            continue
 
         path = []
         if "noUserFeed" not in rd:
@@ -639,27 +639,27 @@ def parse_path(users, robot, db):
                     tmp = ll.find("a", {'target': '_blank'}).attrs['href']
                     tmp = tmp.split('/')[2]
                     tmp = tmp.split(",")
-                    lng = tmp[1]
-                    lat = tmp[0]
+                    lng = float(tmp[1])
+                    lat = float(tmp[0])
                 elif post.find("div", class_="time_mapsite") is not None:
                     ll = post.find("div", class_="time_mapsite")
                     tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
                     tmp = tmp.split(",")
-                    lat = tmp[1]
-                    lng = tmp[0].split("(")[1]
+                    lat = float(tmp[1])
+                    lng = float(tmp[0].split("(")[1])
                 elif post.find("div", class_="time_mapsite2") is not None:
                     ll = post.find("div", class_="time_mapsite2")
                     tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
                     tmp = tmp.split(",")
-                    lat = tmp[1]
-                    lng = tmp[0].split("(")[1]
+                    lat = float(tmp[1])
+                    lng = float(tmp[0].split("(")[1])
                 else:
-                    lat = 0
-                    lng = 0
+                    lat = 0.0
+                    lng = 0.0
 
                 if lat == '':
-                    lat = 0
-                    lng = 0
+                    lat = 0.0
+                    lng = 0.0
                 try:
                     log(NOTICE, '%s %s latlng (%f, %f)' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), lat, lng))
                 except UnicodeEncodeError:

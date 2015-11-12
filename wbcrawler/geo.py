@@ -73,7 +73,7 @@ def estimate_location_by_path(user):
     est_latlng = [0, 0]
     path = user['path']
     latlng = user['latlng']
-    if user['path'] != [] and user['path'] != [[0, 0, 0]]:
+    if user['path'] != [] and user['path'][0][0] != 0:
 
         if latlng != [0, 0] or latlng != [-1, -1]:
             path.append(latlng)

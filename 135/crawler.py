@@ -18,8 +18,6 @@ from wbcrawler.robot import register, unregister, create_database, unlock_robots
 from wbcrawler.log import *
 from settings import SETTINGS
 
-# First Round: 129 minutes
-
 # unlock the unreleased robots
 unlock_robots(SETTINGS)
 

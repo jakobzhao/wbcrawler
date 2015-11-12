@@ -639,20 +639,20 @@ def parse_path(users, robot, db):
                     tmp = ll.find("a", {'target': '_blank'}).attrs['href']
                     tmp = tmp.split('/')[2]
                     tmp = tmp.split(",")
-                    lng = float(tmp[1])
-                    lat = float(tmp[0])
+                    lng = tmp[1]
+                    lat = tmp[0]
                 elif post.find("div", class_="time_mapsite") is not None:
                     ll = post.find("div", class_="time_mapsite")
                     tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
                     tmp = tmp.split(",")
-                    lat = float(tmp[1])
-                    lng = float(tmp[0].split("(")[1])
+                    lat = tmp[1]
+                    lng = tmp[0].split("(")[1]
                 elif post.find("div", class_="time_mapsite2") is not None:
                     ll = post.find("div", class_="time_mapsite2")
                     tmp = ll.find("img", class_="bigcursor").attrs["onclick"]
                     tmp = tmp.split(",")
-                    lat = float(tmp[1])
-                    lng = float(tmp[0].split("(")[1])
+                    lat = tmp[1]
+                    lng = tmp[0].split("(")[1]
                 else:
                     lat = 0.0
                     lng = 0.0
@@ -660,11 +660,13 @@ def parse_path(users, robot, db):
                 if lat == '':
                     lat = 0.0
                     lng = 0.0
+                lat = float(lat)
+                lng = float(lng)
                 try:
                     log(NOTICE, '%s %s latlng (%f, %f)' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), lat, lng))
                 except UnicodeEncodeError:
                     pass
-                path.append([float(lat), float(lng), t_china])
+                path.append([lat, lng, t_china])
         else:
             path.append([0, 0, 0])
 

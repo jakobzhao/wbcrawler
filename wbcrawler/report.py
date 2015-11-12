@@ -41,7 +41,7 @@ def brief_report(settings):
     utc_now_5 = now - datetime.timedelta(days=5)
 
     # For robot information
-    if settings['remote'] is None:
+    if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
     else:

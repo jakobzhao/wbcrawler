@@ -24,7 +24,7 @@ from log import *
 
 
 def register(settings):
-    if settings['remote'] is None:
+    if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
     else:
@@ -137,7 +137,7 @@ def unregister(robot):
     settings = robot['settings']
     account = robot['account']
 
-    if settings['remote'] is None:
+    if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
     else:
@@ -175,7 +175,7 @@ def create_database(settings, fresh=False):
 
 
 def unlock_robots(settings):
-    if settings['remote'] is None:
+    if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
     else:

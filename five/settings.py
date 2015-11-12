@@ -13,7 +13,7 @@ SETTINGS = {
     'robot_table': 'accounts',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 6,
+    'robot_num': 1,
     'keywords': ['五中全会'],
     'control_days': 200,
     'replies_control_days': 200,

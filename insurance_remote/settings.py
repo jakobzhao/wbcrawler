@@ -16,8 +16,8 @@ SETTINGS = {
     'port': 27017,
     'robot_num': 15,
     'keywords': ['社保', '商业保险', '社会保险', '医疗保险', '医保', '医院%20报销'],
-    'control_days': 60,
-    'replies_control_days': 60,
+    'control_days': 45,
+    'replies_control_days': 45,
     'min_fwd_times': 20,
     'remote': {'address': 'localhost', 'port': 27017, 'robot_table': 'accounts'}
 }

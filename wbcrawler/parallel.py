@@ -112,18 +112,16 @@ def repost_crawling(rbt):
 
 
 def path_crawling(rbt):
-    utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=rbt['settings']['replies_control_days'])
+    # utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=rbt['settings']['replies_control_days'])
     pr = rbt['count']
     client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        search_json = {'path': [], "timestamp": {"$gt": utc_now}}
-
+        # search_json = {'path': [], "timestamp": {"$gt": utc_now}}
+        search_json = {'latlng': [0, 0]}
+        # search_json = {}
         count = db.users.find(search_json).count()
-        print "==========================================="
-        print count
-        exit(-1)
         slc = count / pr
         users = db.users.find(search_json).skip(slc * rbt['id']).limit(slc)
         parse_path(users, rbt, db)

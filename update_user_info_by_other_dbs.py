@@ -17,7 +17,7 @@ from pymongo import MongoClient
 
 address = 'localhost'
 port = 27017
-project = 'five_bkp2'
+project = 'five'
 
 other_address = 'localhost'
 other_port = 27017

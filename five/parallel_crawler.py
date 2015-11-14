@@ -24,12 +24,12 @@ from wbcrawler.robot import unlock_robots
 
 # funcs
 unlock_robots(SETTINGS)
-parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
+# parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
 unlock_robots(SETTINGS)
 # parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
 unlock_robots(SETTINGS)
-# parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
-# unlock_robots(SETTINGS)
+parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
+unlock_robots(SETTINGS)
 
 if __name__ == '__main__':
     pass

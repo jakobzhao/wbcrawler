@@ -13,7 +13,7 @@ SETTINGS = {
     'robot_table': 'accounts',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 20,
+    'robot_num': 15,
     'keywords': ['国企改革', '国有企业改革', '新兴城镇化', '居住证'],
     'control_days': 30,
     'replies_control_days': 30,

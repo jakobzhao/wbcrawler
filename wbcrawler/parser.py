@@ -309,6 +309,19 @@ def deleted(post, db):
     return True
 
 
+def flow_contrl(current, total):
+    control = False
+    if total == 0 or total == 1:
+        pass
+    elif total in range(2, 100):
+        if current / float(total) > 0.5:
+            control = True
+    else:
+        if current / float(total) > (1 / float(log10(total))):
+            control = True
+    return control
+
+
 def parse_repost(posts, robot, db):
     settings = robot['settings']
     browser = robot['browser']
@@ -385,15 +398,8 @@ def parse_repost(posts, robot, db):
             }})
 
         # ======================= flow size control ==========================
-        replies_num = len(post['replies'])
-        if fwd_count == 0 or fwd_count == 1:
-            pass
-        elif fwd_count in range(2, 100):
-            if replies_num / float(fwd_count) > 0.5:
-                continue
-        else:
-            if replies_num / float(fwd_count) > (1 / float(log10(fwd_count))):
-                continue
+        if flow_contrl(len(post['replies']), fwd_count):
+            continue
         # ======================= flow size control ==========================
 
         # 2.2  harvest and flow size control
@@ -415,6 +421,12 @@ def parse_repost(posts, robot, db):
             stop = True
 
         for i in range(pages):
+
+            # ======================= flow size control ==========================
+            if flow_contrl(i * 15, fwd_count):
+                break
+            # ======================= flow size control ==========================
+
             # all the replies in the database.
             mids = [reply['mid'] for reply in db.posts.find_one({'mid': post['mid']})['replies']]
             # num_replies = len(mid)

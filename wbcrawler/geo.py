@@ -21,15 +21,21 @@ sys.setdefaultencoding('utf-8')
 def geocode(loc):
     lat, lng = -1, -1
     url = 'http://api.map.baidu.com/geocoder/v2/?address=%s&output=json&ak=%s' % (loc, BAIDU_AK)
-    response = urllib2.urlopen(url.replace(' ', '%20'))
-    try:
-        loc_json = json.loads(response.read())
-        lat = loc_json[u'result'][u'location'][u'lat']
-        lng = loc_json[u'result'][u'location'][u'lng']
-    except ValueError:
-        log(ERROR, "No JSON object was decoded", 'geocode')
-    except KeyError, e:
-        log(ERROR, e.message, 'geocode')
+    if loc == u'其他' or loc == u'美国' or loc == u'英国':
+        pass
+    else:
+        try:
+            response = urllib2.urlopen(url.replace(' ', '%20'))
+        except urllib2.HTTPError, e:
+            log(WARNING, e, 'geocode')
+        try:
+            loc_json = json.loads(response.read())
+            lat = loc_json[u'result'][u'location'][u'lat']
+            lng = loc_json[u'result'][u'location'][u'lng']
+        except ValueError:
+            log(ERROR, "No JSON object was decoded", 'geocode')
+        except KeyError, e:
+            log(ERROR, e.message, 'geocode')
     return [lat, lng]
 
 
@@ -60,7 +66,28 @@ def geocode_by_semantics(project, address, port):
         else:
             continue
 
-        log(NOTICE, 'geocode the user by its semantic info %s: #%d, %d posts remain. latlng: %s ' % (verified_info.encode('gbk', 'ignore'), i, count - i, str(latlng)))
+        log(NOTICE, '#%d geocode the user by its semantic info %s. %d posts remain. latlng: %s ' % (i, verified_info.encode('gbk', 'ignore'), count - i, str(latlng)))
+
+        if latlng[0] != -1:
+            db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+
+    log(NOTICE, "mission compeletes.")
+
+
+def geocode_locational_info(project, address, port):
+    from pymongo import MongoClient
+    client = MongoClient(address, port)
+    db = client[project]
+    search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'location': {'$ne': ''}}
+    users = db.users.find(search_json)
+    count = users.count()
+    print count
+    i = 0
+    for user in users:
+        i += 1
+        latlng = geocode(user['location'])
+
+        log(NOTICE, '#%d geocode the user by its locational info %s. %d posts remain. latlng: %s ' % (i, user['location'].encode('gbk', 'ignore'), count - i, str(latlng)))
 
         if latlng[0] != -1:
             db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
@@ -88,11 +115,9 @@ def estimate_location_by_path(user):
         distances = []
         for latlng in path:
             distances.append(abs(latlng[0] - avg_lat) + abs(latlng[1] - avg_lng))
-        est_latlng = path[distances.index(min(distances))][1:]
-    elif user['path'] == [[0, 0, 0]]:
-        est_latlng = latlng
+        est_latlng = path[distances.index(min(distances))][0:2]
     elif user['path'] == [] and latlng != [0, 0]:
-        est_latlng = latlng[1:0]
+        est_latlng = latlng
     else:
         pass
 
@@ -111,13 +136,16 @@ def georeference(project, address, port):
         userid = post['user']['userid']
         user = db.users.find_one({'userid': userid})
         i += 1
-        try:
-            db.posts.update({'mid': post['mid']}, {'$set': {
-                'latlng': [user['latlng'][0], user['latlng'][1]]
-            }
-            })
-            log(NOTICE, 'georeferencing #%d, %d posts remain. latlng: %s ' % (i, count - i, str(user['latlng'])))
-        except:
-            log(NOTICE, 'the user latlng does not exit')
+        if abs(user['latlng'][0] - 0) < 0.001 or abs(user['latlng'][0] + 1) < 0.001:
+            pass
+        else:
+            try:
+                db.posts.update({'mid': post['mid']}, {'$set': {
+                    'latlng': user['latlng']
+                }
+                })
+                log(NOTICE, 'georeferencing #%d, %d posts remain. latlng: %s ' % (i, count - i, str(user['latlng'])))
+            except:
+                log(NOTICE, 'the user latlng does not exit')
 
     log(NOTICE, "mission compeletes.")

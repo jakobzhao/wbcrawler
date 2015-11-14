@@ -17,6 +17,7 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 from wbcrawler.robot import register, unregister
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
+from wbcrawler.settings import UTC
 from httplib import BadStatusLine
 from urllib2 import URLError
 
@@ -95,10 +96,12 @@ def repost_crawling(rbt):
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        count = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).count()
+        # utc_end = datetime.datetime(2015, 11, 11, 0, 0, 0, 0, tzinfo=UTC)
+        # search_json = {"timestamp": {"$gt": utc_now}, "timestamp": {"$lt": utc_end}, 'keyword': {'$ne': '五中全会'}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}
+        search_json = {"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}
+        count = db.posts.find(search_json).count()
         slc = count / rr
-        # posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).sort([('mid', DESCENDING), ('fwd_count', ASCENDING)]).skip(slc * rbt['id']).limit(slc)
-        posts = db.posts.find({"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}).skip(slc * rbt['id']).limit(slc)
+        posts = db.posts.find(search_json).skip(slc * rbt['id']).limit(slc)  # .sort([('mid', DESCENDING), ('fwd_count', ASCENDING)])
         parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
@@ -108,16 +111,40 @@ def repost_crawling(rbt):
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
-def info_crawling(rbt):
+def path_crawling(rbt):
+    utc_now = datetime.datetime.utcnow() - datetime.timedelta(days=rbt['settings']['replies_control_days'])
+    pr = rbt['count']
+    client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
+    db = client[rbt['settings']['project']]
+    try:
+        round_start = datetime.datetime.now()
+        search_json = {'path': [], "timestamp": {"$gt": utc_now}}
 
+        count = db.users.find(search_json).count()
+        print "==========================================="
+        print count
+        exit(-1)
+        slc = count / pr
+        users = db.users.find(search_json).skip(slc * rbt['id']).limit(slc)
+        parse_path(users, rbt, db)
+        log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
+    except KeyboardInterrupt:
+        log(ERROR, "Program is interrupted.", 'path_crawling')
+    finally:
+        unregister(rbt)
+        log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
+
+
+def info_crawling(rbt):
     ir = rbt['count']
     client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        count = db.users.find({'latlng': [0, 0]}).count()
+        search_json = {'latlng': [0, 0]}
+        count = db.users.find(search_json).count()
         slc = count / ir
-        users = db.users.find({'latlng': [0, 0]}).skip(slc * rbt['id']).limit(slc)
+        users = db.users.find(search_json).skip(slc * rbt['id']).limit(slc)
         parse_info(users, rbt, db)
         log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
@@ -125,25 +152,6 @@ def info_crawling(rbt):
     finally:
         unregister(rbt)
         log(NOTICE, "Time: %d min(s)." % int((datetime.datetime.now() - start).seconds / 60))
-
-
-def path_crawling(rbt):
-    pr = rbt['count']
-    client = MongoClient(rbt['settings']['address'], rbt['settings']['port'])
-    db = client[rbt['settings']['project']]
-    try:
-        round_start = datetime.datetime.now()
-        count = db.users.find({'path': []}).count()
-        slc = count / pr
-        users = db.users.find({'path': []}).skip(slc * rbt['id']).limit(slc)
-        parse_path(users, rbt, db)
-        log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
-        #   i += 1
-    except KeyboardInterrupt:
-        log(ERROR, "Program is interrupted.", 'path_crawling')
-    finally:
-        unregister(rbt)
-        log(NOTICE, "Time: %d mins." % int((datetime.datetime.now() - start).seconds / 60))
 
 
 def parallel_crawling(rr, pr, ir, settings):
@@ -171,6 +179,8 @@ def parallel_crawling(rr, pr, ir, settings):
         log(FATALITY, "urllib2.URLError", 'parallel_crawlling')
     except ValueError, e:
         log(FATALITY, "ValueError: could not convert string to float", 'parallel_crawlling')
+    except IndexError, e:
+        log(FATALITY, "IndexError: List index out of range", 'parallel_crawlling')
     # except WindowsError, e:
     #     # [Error 32] The process cannot access the file because it is being used by another process:
     #     # 'c:\\users\\bo\\appdata\\local\\temp\\tmphrg3yv.webdriver.xpi\\resource\\modules\\web-element-cache.js'

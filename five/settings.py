@@ -8,14 +8,14 @@
 # @organization: Harvard Kennedy School
 
 SETTINGS = {
-    'project': 'five_bkp',
+    'project': 'five',
     'pis': ['jakobzhao@gmail.com'],
     'robot_table': 'accounts',
     'address': 'localhost',
     'port': 27017,
-    'robot_num': 15,
-    'keywords': ['国企改革', '国有企业改革', '新兴城镇化', '居住证'],
-    'control_days': 30,
-    'replies_control_days': 30,
-    'min_fwd_times': 40
+    'robot_num': 10,
+    'keywords': [u'居住证'],
+    'control_days': 35,
+    'replies_control_days': 33,
+    'min_fwd_times': 5
 }

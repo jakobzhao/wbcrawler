@@ -149,6 +149,7 @@ def parse_item(post, keyword):
             "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
             "timestamp": t_china,
             "location": "",
+            "latlng": [0, 0],
             "fwd_count": fwd_count,
             "cmt_count": 0,
             "like_count": like_count,
@@ -156,13 +157,6 @@ def parse_item(post, keyword):
             "user": {
                 "userid": userid,
                 "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
-                "user_verified": user_verified,
-                "location": "",
-                "follower_count": 0,
-                "friend_count": 0,
-                "verified_info": "",
-                "latlng": [0, 0],
-                "path": []
             },
             "comments": [],
             "replies": [],
@@ -522,7 +516,7 @@ def parse_info(users, robot, db):
                 continue
         url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response_as_human(browser, url, 20)
-        gender, birthday, verified, verified_info, loc, latlng = '', 1900, False, '', '', [0, 0]
+        gender, birthday, verified, verified_info, loc, latlng = '', 1900, False, '', '', [-1.0, -1.0]
 
         # test
         # f = open("../data/parse_profile_%s.html" % user['userid'], "w")
@@ -612,7 +606,7 @@ def parse_path(users, robot, db):
         rd = get_response_as_human(browser, url, page_reload=True)
 
         if rd == "":
-            db.users.update({'userid': user['userid']}, {'$set': {'path': [[0, 0, datetime.datetime.now(TZCHINA)]]}})
+            db.users.update({'userid': user['userid']}, {'$set': {'path': [[0, 0, 0]]}})
             browser.set_page_load_timeout(TIMEOUT)
             continue
         if "weibo.com/login.php?url=" in browser.current_url:
@@ -686,13 +680,13 @@ def parse_path(users, robot, db):
         db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
         # 更新user 的latlng,
         # 对于post的latlng的更新，我认为可以不着急？
-        try:
-            latlng = [path[0][0], path[0][1]]  # 临时策略
-        except IndexError:
-            latlng = [-1, -1]
-        finally:
-            db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
-            log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
+        # try:
+        #     latlng = [path[0][0], path[0][1]]  # 临时策略
+        # except IndexError:
+        #     latlng = [-1, -1]
+        # finally:
+        # db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+        log(NOTICE, "Time: %d sec(s)." % int((datetime.datetime.now() - start).seconds))
     # change to the original timeout
     browser.set_page_load_timeout(TIMEOUT)
     return True

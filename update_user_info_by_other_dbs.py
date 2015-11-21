@@ -25,7 +25,7 @@ other_project = 'gov'
 
 client = MongoClient(address, port)
 db = client[project]
-users = db.users.find()
+users = db.users.find({'latlng': [0, 0]})
 log(NOTICE, 'the total number of users: %d' % users.count())
 
 other_client = MongoClient(other_address, other_port)

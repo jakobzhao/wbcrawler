@@ -21,7 +21,10 @@ sys.setdefaultencoding('utf-8')
 def geocode(loc):
     lat, lng = -1, -1
     url = 'http://api.map.baidu.com/geocoder/v2/?address=%s&output=json&ak=%s' % (loc, BAIDU_AK)
-    if loc == u'其他' or loc == u'美国' or loc == u'英国':
+    others = [u'其他', u'美国', u'英国', u'澳大利亚', u'伊朗', u'台湾', u'沙特阿拉伯',
+              u'爱尔兰', u'印度', u'印尼', u'奥地利', u'挪威', u'乌克兰', u'瑞士',
+              u'西班牙', u'古巴', u'挪威', u'德国', u'埃及', u'巴西', u'比利时']
+    if loc in others:
         pass
     else:
         try:
@@ -45,8 +48,9 @@ def geocode_by_semantics(project, address, port):
     from pymongo import MongoClient
     client = MongoClient(address, port)
     db = client[project]
-    users = db.users.find({'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'verified': True})
-    count = db.users.find({'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'verified': True}).count()
+    search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'verified': True}
+    users = db.users.find(search_json)
+    count = db.users.find(search_json).count()
     print count
     i = 0
     for user in users:
@@ -68,7 +72,7 @@ def geocode_by_semantics(project, address, port):
 
         log(NOTICE, '#%d geocode the user by its semantic info %s. %d posts remain. latlng: %s ' % (i, verified_info.encode('gbk', 'ignore'), count - i, str(latlng)))
 
-        if latlng[0] != -1:
+        if latlng[0] != -1 and latlng[0] != 0:
             db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
 
     log(NOTICE, "mission compeletes.")
@@ -79,30 +83,33 @@ def geocode_locational_info(project, address, port):
     client = MongoClient(address, port)
     db = client[project]
     search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'location': {'$ne': ''}}
+
     users = db.users.find(search_json)
     count = users.count()
     print count
     i = 0
     for user in users:
         i += 1
-        latlng = geocode(user['location'])
+        if 'location' in user.keys():
+            latlng = geocode(user['location'])
 
-        log(NOTICE, '#%d geocode the user by its locational info %s. %d posts remain. latlng: %s ' % (i, user['location'].encode('gbk', 'ignore'), count - i, str(latlng)))
+            log(NOTICE, '#%d geocode the user by its locational info %s. %d posts remain. latlng: %s ' % (i, user['location'].encode('gbk', 'ignore'), count - i, str(latlng)))
 
-        if latlng[0] != -1:
-            db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+            if latlng[0] != -1 and latlng[0] != 0:
+                db.users.update({'userid': user['userid']}, {'$set': {'latlng': latlng}})
+        else:
+            continue
 
     log(NOTICE, "mission compeletes.")
 
 
 # Estimate where a post was sent out based the path of its author.
 def estimate_location_by_path(user):
-    est_latlng = [0, 0]
+    est_latlng = [-1, -1]
     path = user['path']
     latlng = user['latlng']
     if user['path'] != [] and user['path'][0][0] != 0:
-
-        if latlng != [0, 0] or latlng != [-1, -1]:
+        if latlng != [0, 0] and latlng != [-1, -1]:
             path.append(latlng)
         avg_lat = 0
         avg_lng = 0
@@ -133,19 +140,25 @@ def georeference(project, address, port):
     count = db.posts.find().count()
     i = 0
     for post in posts:
-        userid = post['user']['userid']
-        user = db.users.find_one({'userid': userid})
+        # userid = post['user']['userid']
+        username = post['user']['username']
+        user = db.users.find_one({'username': username})
         i += 1
-        if abs(user['latlng'][0] - 0) < 0.001 or abs(user['latlng'][0] + 1) < 0.001:
-            pass
-        else:
-            try:
-                db.posts.update({'mid': post['mid']}, {'$set': {
-                    'latlng': user['latlng']
-                }
-                })
-                log(NOTICE, 'georeferencing #%d, %d posts remain. latlng: %s ' % (i, count - i, str(user['latlng'])))
-            except:
-                log(NOTICE, 'the user latlng does not exit')
+        try:
+            if abs(user['latlng'][0] - 0) < 0.001:
+                pass
+            elif abs(user['latlng'][0] + 1) < 0.001:
+                pass
+            else:
+                try:
+                    db.posts.update_many({'mid': post['mid']}, {'$set': {
+                        'latlng': user['latlng']
+                    }
+                    })
+                    log(NOTICE, 'georeferencing #%d, %d posts remain. latlng: %s ' % (i, count - i, str(user['latlng'])))
+                except:
+                    log(NOTICE, 'the user latlng does not exit')
+        except:
+            print "user has been mistakenly deleted"
 
     log(NOTICE, "mission compeletes.")

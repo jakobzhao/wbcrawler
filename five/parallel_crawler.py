@@ -16,6 +16,9 @@ sys.path.append("/home/bo/Workspace/wbcrawler/five")
 sys.path.append("C:/Workspace/wbcrawler")
 sys.path.append("C:/Workspace/wbcrawler/five")
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
 from settings import SETTINGS
 from wbcrawler.parallel import parallel_crawling
 from wbcrawler.robot import unlock_robots
@@ -25,11 +28,11 @@ from wbcrawler.robot import unlock_robots
 # funcs
 unlock_robots(SETTINGS)
 # parallel_crawling(SETTINGS['robot_num'], 0, 0, SETTINGS)
-unlock_robots(SETTINGS)
+# unlock_robots(SETTINGS)
 # parallel_crawling(0, SETTINGS['robot_num'], 0, SETTINGS)
-unlock_robots(SETTINGS)
+# unlock_robots(SETTINGS)
 parallel_crawling(0, 0, SETTINGS['robot_num'], SETTINGS)
-unlock_robots(SETTINGS)
+#unlock_robots(SETTINGS)
 
 if __name__ == '__main__':
     pass

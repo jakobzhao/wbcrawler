@@ -21,13 +21,12 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 from pymongo import MongoClient
 import time
+from math import fabs
 import mechanize
 import random
 from urllib2 import URLError
 from httplib import BadStatusLine
 from socket import timeout
-import platform
-from pyvirtualdisplay import Display
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -126,6 +125,11 @@ def tencent_sentiment(id, robot_num, project, address, port):
         except IndexError:
             continue
         sentiment = json.loads(result)
+        # print sentiment
+        try:
+            sentiment['code']
+        except TypeError:
+            continue
 
         if sentiment['code'] == 0:
             neg = float(sentiment['negative'])
@@ -142,6 +146,75 @@ def tencent_sentiment(id, robot_num, project, address, port):
             client[project].posts.update({'mid': post['mid']}, {'$set': {'msg': 'Processed. Warning'}})
             log(NOTICE, "#%d, %d remains. time: %d sec(s). A Warning: %s, %s" % (i, count - i, int((datetime.datetime.now() - round_start).seconds), result, c.encode('utf-8', 'ignore')))
     browser.close()
+    log(NOTICE, 'Mission compeltes.')
+
+
+def tencent_sentiment_2(project, address, port):
+    client = MongoClient(address, port)
+    search_json = {'msg': {'$ne': ''}}
+    count = client[project].posts.find(search_json).count()
+    posts = client[project].posts.find(search_json)
+    log(NOTICE, "Total #: %d" % count)
+    i = 0
+    for post in posts:
+        round_start = datetime.datetime.now()
+        i += 1
+        replies = post['replies']
+        if len(replies) == 0:
+            continue
+        pos = post['pos']
+        neg = post['neg']
+        for reply in replies:
+            search_json = {'mid': reply['mid']}
+            repost = client[project].posts.find_one(search_json)
+            if repost is not None:
+                c = repost['content']
+            else:
+                continue
+            find = False
+            for re in RE_EQUALTO:
+                if c == re:
+                    log(NOTICE, c.encode('gbk', 'ignore'))
+                    find = True
+                    client[project].posts.update({'mid': reply['mid']}, {'$set': {'pos': pos, 'neg': neg, 'msg': 'Processed.'}})
+                    break
+            if find:
+                continue
+            for re in RE_STARTWITH:
+                if c[:len(re)] == re:
+                    log(NOTICE, c.encode('gbk', 'ignore'))
+                    find = True
+                    client[project].posts.update({'mid': reply['mid']}, {'$set': {'pos': pos, 'neg': neg, 'msg': 'Processed.'}})
+                    break
+            if find:
+                continue
+
+        log(NOTICE, "#%d, %d remains. time: %d sec(s)." % (i, count - i, int((datetime.datetime.now() - round_start).seconds)))
+    log(NOTICE, 'Mission compeltes.')
+
+
+def tencent_sentiment_3(project, address, port):
+    client = MongoClient(address, port)
+    search_json = {'msg': {'$ne': ''}}
+    count = client[project].posts.find(search_json).count()
+    posts = client[project].posts.find(search_json)
+    log(NOTICE, "Total #: %d" % count)
+    i = 0
+    for post in posts:
+        round_start = datetime.datetime.now()
+        i += 1
+        pos = float(post['pos'])
+        neg = float(post['neg'])
+
+        if fabs(pos - 0) < 0.000001 and fabs(neg - 0) < 0.000001:
+            client[project].posts.update({'mid': post['mid']}, {'$set': {'sentiment': 0}})
+        elif fabs(pos - 0.5) < 0.000001 and fabs(neg - 0.5) < 0.000001:
+            client[project].posts.update({'mid': post['mid']}, {'$set': {'sentiment': 10}})
+        elif pos - neg > 0:
+            client[project].posts.update({'mid': post['mid']}, {'$set': {'sentiment': 15}})
+        elif pos - neg < 0:
+            client[project].posts.update({'mid': post['mid']}, {'$set': {'sentiment': 5}})
+        log(NOTICE, "#%d, %d remains. time: %d sec(s)." % (i, count - i, int((datetime.datetime.now() - round_start).seconds)))
     log(NOTICE, 'Mission compeltes.')
 
 

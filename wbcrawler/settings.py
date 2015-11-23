@@ -22,8 +22,8 @@ STOP_WORDS.extend([u'http', u'...'])
 # STOP_WORDS.extend([u'http', u'...', u'应该', u'一个', u'买', u'知道'])
 TENCENT_SECRET_ID = 'AKID8afsi3KB4SaFEgTFtBJpyVjGJOB5uawg'
 TENCENT_SECRET_KEY = 'W6OpvVwoIJ2rsHVPZnzlfHv8JiYeQdRf'
-RE_STARTWITH = [u'//', u'收藏', u'轉發微博', u'转了', u'转发', u'转发微博', u'转发微薄', u'转发收藏', u'转吧', u'转来', u'转播', u'转走', u'转起', u'转转', u'转需', u'Repost', u'repost']
-RE_EQUALTO = [u' //', u'马', u'转', u'马克', u'']
+RE_STARTWITH = [u'//', u'收藏', u'轉發微博', u'轉發微博', u'转了', u'转发', u'转发微博', u'转发微薄', u'转发收藏', u'转吧', u'转来', u'转播', u'转走', u'转起', u'转转', u'转需', u'Repost', u'repost']
+RE_EQUALTO = [u' //', u'马', u'转', u'马克', u'', u' ']
 
 # TENCENT_SECRET_ID = 'AKIDiMUyVgGpYK9TJgA6zNQqoIPjVed96t6h'
 # TENCENT_SECRET_KEY = 'WTZiPBVFaLgrl7e6zfyZkxMGDJmttZvC'

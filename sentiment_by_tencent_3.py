@@ -7,9 +7,9 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 import sys
-from wbcrawler.sentiment import tencent_sentiment
+from wbcrawler.sentiment import tencent_sentiment_3
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-tencent_sentiment(0, 1, 'five', 'localhost', 27017)
+tencent_sentiment_3('five', 'localhost', 27017)

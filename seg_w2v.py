@@ -18,31 +18,31 @@ sys.setdefaultencoding('utf-8')
 
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'insurance'
 
-# words = []
-# sentences = []
-# client = MongoClient(address, port)
-# db = client[project]
-# posts = db.posts.find()
-# log(NOTICE, "total posts %d" % posts.count())
-#
-# i = 0
-# for post in posts:
-#     sentence = seg_sentence(post['content'])
-#     words.extend(sentence.split(u' '))
-#     sentences.append(sentence.split(u' '))
-#     i += 1
-#     log(NOTICE, "post # %d" % i)
-#
-# model = Word2Vec(sentences, min_count=5, workers=10)
+words = []
+sentences = []
+client = MongoClient(address, port)
+db = client[project]
+posts = db.posts.find()
+log(NOTICE, "total posts %d" % posts.count())
 
-# model.save('%s/w2v.bin' % project)
-# log(NOTICE, 'mission completes')
+i = 0
+for post in posts:
+    sentence = seg_sentence(post['content'])
+    words.extend(sentence.split(u' '))
+    sentences.append(sentence.split(u' '))
+    i += 1
+    log(NOTICE, "post # %d" % i)
 
-model = Word2Vec.load('%s/w2v.bin' % project)
-for w, i in model.most_similar([u'国企改革'], topn=100):
-    log(NOTICE, w + ' ' + str(i))
+model = Word2Vec(sentences, min_count=5, workers=10)
+
+model.save('%s/w2v.bin' % project)
+log(NOTICE, 'mission completes')
+
+# model = Word2Vec.load('%s/w2v.bin' % project)
+# for w, i in model.most_similar([u'国企改革'], topn=100):
+#     log(NOTICE, w + ' ' + str(i))
 
 
 # print '================'

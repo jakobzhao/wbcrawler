@@ -1,15 +1,21 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Created on Nov 19, 2015
+# Created on Oct 16, 2015
 # @author:       Bo Zhao
 # @email:        bo_zhao@hks.harvard.edu
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 import sys
-from wbcrawler.sentiment import tencent_sentiment_3
+from wbcrawler.sna import export_posts
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-tencent_sentiment_3('insurance', 'localhost', 27017)
+# Variables
+# address = "192.168.1.12"
+address = "localhost"
+port = 27017
+project = 'insurance'
+
+export_posts(project, address, port, output="op.csv")

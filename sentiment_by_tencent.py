@@ -12,4 +12,4 @@ from wbcrawler.sentiment import tencent_sentiment
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-tencent_sentiment(0, 1, 'five', 'localhost', 27017)
+tencent_sentiment(0, 1, 'insurance', 'localhost', 27017)

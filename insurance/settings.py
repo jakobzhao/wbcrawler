@@ -20,3 +20,5 @@ SETTINGS = {
     'replies_control_days': 5,
     'min_fwd_times': 2
 }
+
+#     'remote': {'address': 'localhost', 'port': 27017, 'robot_table': 'accounts'}

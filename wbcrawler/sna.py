@@ -9,6 +9,7 @@
 
 import sys
 from pymongo import MongoClient, DESCENDING
+from gensim.models import Word2Vec
 import networkx as nx
 from settings import TZCHINA
 from log import *
@@ -38,16 +39,31 @@ def generate_network(project, address, port, output="wbcrawler.gexf", year=2015,
     log(NOTICE, 'the nework file of "%s" is suceessfully stored in %s.' % (project, output))
 
 
-def generate_sematic_network(input='', output="sematic.gexf"):
+def generate_sematic_network(keywords=[], depth=[10, 10, 10], w2v_file='', gexf_file=''):
+    model = Word2Vec.load(w2v_file)
     g = nx.DiGraph()
-    f = open(input, 'r')
-    for line in f.readlines():
-        fields = line.split(',')
-        g.add_node(unicode(fields[0]))
-        g.add_edge(unicode(fields[0]), unicode(fields[1]), weight=float(fields[2]))
+    for keyword in keywords:
+        g.add_node(keyword)
+        for w, i in model.most_similar(keyword, topn=depth[0]):
+            if w in keywords:
+                w = keyword
+            g.add_node(w)
+            g.add_edge(w, keyword, weight=i)
+            notice = (w + ' ' + str(i)).encode('gbk', 'ignore')
+            log(NOTICE, notice)
+            for t, j in model.most_similar(w, topn=depth[1]):
+                g.add_node(t)
+                g.add_edge(t, w, weight=j)
+                notice = (t + ' ' + str(j)).encode('gbk', 'ignore')
+                log(NOTICE, notice)
+                for s, k in model.most_similar(t, topn=depth[2]):
+                    g.add_node(s)
+                    g.add_edge(s, t, weight=k)
+                    notice = (s + ' ' + str(k)).encode('gbk', 'ignore')
+                    log(NOTICE, notice)
 
-    nx.write_gexf(g, output, prettyprint=True)
-    log(NOTICE, 'the nework file is suceessfully stored in %s.' % output)
+    nx.write_gexf(g, gexf_file, prettyprint=True)
+    log(NOTICE, 'the nework file is suceessfully stored in %s.' % gexf_file)
 
 
 def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10, date=20):
@@ -99,5 +115,40 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
     f.close()
     log(NOTICE, 'the nework file of "%s" is suceessfully stored in %s.' % (project, output))
 
+
+def export_posts(project, address, port, output="op.csv"):
+    client = MongoClient(address, port)
+    db = client[project]
+    f = open(output, 'w')
+    f.write('mid, topic, keyword, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
+    posts = db.posts.find()
+    count = posts.count()
+    i = 0
+    for post in posts:
+        i += 1
+        log(NOTICE, "#%d, %d post remain." % (i, count - i))
+        username = post['user']['username'].encode('utf-8', 'ignore')
+        userid = post['user']['userid']
+        user = db.users.find_one({'userid': userid})
+        if user is not None:
+            verified = str(user['verified'])
+            verified_info = user['verified_info']
+
+        content = post['content'].encode('gbk', 'ignore').decode('gbk', 'ignore')
+        topic = None
+        if post['topic'] == []:
+            topics = ['none']
+        else:
+            topics = post['topic']
+        for topic in topics:
+            line = '%d, %s, %s, %f, %f, %f, %s, %d, %s, %s, %s, %s\n' % (
+            post['mid'], topic, post['keyword'], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+            f.write(line)
+            try:
+                log(NOTICE, line)
+            except:
+                pass
+    f.close()
+    log(NOTICE, 'mission completes')
 if __name__ == '__main__':
     pass

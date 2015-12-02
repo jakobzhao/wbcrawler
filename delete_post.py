@@ -16,9 +16,9 @@ from wbcrawler.log import *
 from wbcrawler.settings import UTC, TZCHINA
 from pymongo import MongoClient
 
-address = 'localhost'
+address = '192.168.1.12'
 port = 27017
-project = 'insurance'
+project = 'climate'
 
 
 def delete(post):
@@ -55,7 +55,7 @@ deleted = datetime.datetime(2015, 11, 1, 0, 0, 0, 0, tzinfo=UTC)
 
 
 
-mids = [3902889204725136]
+mids = [3914974474721923, 3911413346950667, 3914993852059436, 3914974524634355, 3914924012615874, 3914130954087060, 3914994896482242, 3914971978864493, 3914970276488954, 3914799328984937, 3914985794859287, 3914928027222018]
 for mid in mids:
     search_json = {"mid": mid}
     posts = db.posts.find(search_json)

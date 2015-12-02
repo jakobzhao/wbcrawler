@@ -11,7 +11,7 @@ SETTINGS = {
     'project': 'climate',
     'pis': ['chungen_liu@hks.harvard.edu', 'bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
-    'address': 'localhost',
+    'address': '192.168.1.12',
     'port': 27017,
     'robot_num': 1,
     'keywords': ['气候变化', '全球变暖'],

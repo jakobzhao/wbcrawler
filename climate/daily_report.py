@@ -13,7 +13,6 @@
 # show below is not attached as well. (I cost almost 24 hours to find it out..)
 
 import sys
-from settings import SETTINGS
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/Workspace/wbcrawler")

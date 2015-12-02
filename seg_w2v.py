@@ -18,7 +18,7 @@ sys.setdefaultencoding('utf-8')
 
 address = "localhost"
 port = 27017
-project = 'insurance'
+project = 'five'
 
 words = []
 sentences = []

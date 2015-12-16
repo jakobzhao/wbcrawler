@@ -601,7 +601,7 @@ def parse_path(users, robot, db):
         cur += 1
         start = datetime.datetime.now()
         # url example: http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
-        url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % user['userid']
+        url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % str(user['userid'])
         log(NOTICE, "parsing the routes from %s." % user['username'])
         rd = get_response_as_human(browser, url, page_reload=True)
 

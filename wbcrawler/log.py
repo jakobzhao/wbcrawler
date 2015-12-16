@@ -15,6 +15,7 @@ import datetime
 
 NOTICE, RECORD, WARNING, ERROR, FATALITY, PUSH = 0, 1, 2, 4, 8, 16
 
+
 def log(level, output, func_name=''):
     t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
     if level == NOTICE:

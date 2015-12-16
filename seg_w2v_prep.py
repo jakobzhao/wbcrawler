@@ -23,8 +23,8 @@ project = 'insurance'
 words = []
 client = MongoClient(address, port)
 db = client[project]
-search_json = {'$or': [{'keyword': u'国有企业改革'}, {'keyword': u'国企改革'}]}
-search_json = {}
+search_json = {'$or': [{'keyword': u'社会保险'}, {'keyword': u'社保'}]}
+search_json = {'keyword': u'商业保险'}
 posts = db.posts.find(search_json)
 count = posts.count()
 

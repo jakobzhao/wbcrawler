@@ -13,6 +13,6 @@ from wbcrawler.sna import generate_network
 # address = "192.168.1.12"
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'insurance'
 
-generate_network(project, address, port, "five-1117.gexf", 2015, 10, 1)
+generate_network(project, address, port, "insurance_verified-1204.gexf", 2014, 10, 1)

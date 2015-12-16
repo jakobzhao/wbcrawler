@@ -18,40 +18,41 @@ sys.setdefaultencoding('utf-8')
 
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'insurance'
 
-words = []
-sentences = []
-client = MongoClient(address, port)
-db = client[project]
-posts = db.posts.find()
-log(NOTICE, "total posts %d" % posts.count())
+# words = []
+# sentences = []
+# client = MongoClient(address, port)
+# db = client[project]
+# posts = db.posts.find()
+# log(NOTICE, "total posts %d" % posts.count())
+#
+# i = 0
+# for post in posts:
+#     sentence = seg_sentence(post['content'])
+#     words.extend(sentence.split(u' '))
+#     sentences.append(sentence.split(u' '))
+#     i += 1
+#     log(NOTICE, "post # %d" % i)
+#
+# model = Word2Vec(sentences, min_count=5, workers=10)
+#
+# model.save('%s/w2v.bin' % project)
+# log(NOTICE, 'mission completes')
 
-i = 0
-for post in posts:
-    sentence = seg_sentence(post['content'])
-    words.extend(sentence.split(u' '))
-    sentences.append(sentence.split(u' '))
-    i += 1
-    log(NOTICE, "post # %d" % i)
-
-model = Word2Vec(sentences, min_count=5, workers=10)
-
-model.save('%s/w2v.bin' % project)
-log(NOTICE, 'mission completes')
-
-# model = Word2Vec.load('%s/w2v.bin' % project)
-# for w, i in model.most_similar([u'国企改革'], topn=100):
-#     log(NOTICE, w + ' ' + str(i))
+model = Word2Vec.load('%s/w2v.bin' % project)
+for w, i in model.most_similar([u'商业保险'], topn=1000):
+    # log(NOTICE, w + ' ' + str(i))
+    print w.encode('gbk', 'ignore') + ' ' + str(i).encode('gbk', 'ignore')
 
 
 # print '================'
-# for w, i in model.most_similar(positive=[u'政府', u'坏'], negative=[u'百姓'], topn=10):
-#     log(NOTICE, w + ' ' + str(i))
+for w, i in model.most_similar(positive=[u'保险'], negative=[u'社会保险', u'社保'], topn=10):
+    log(NOTICE, w + ' ' + str(i))
 #
 # print '================'
-# print model.similarity(u'官员', u'百姓')
-# print model.similarity(u'官员', u'公仆')
+print model.similarity(u'商保', u'社保')
+print model.similarity(u'商保', u'社会保险')
 # print model.similarity(u'官员', u'官员')
 # print model.similarity(u'官员', u'人民')
 # pass

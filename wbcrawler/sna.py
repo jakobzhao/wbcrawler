@@ -27,13 +27,20 @@ def generate_network(project, address, port, output="wbcrawler.gexf", year=2015,
     # from the custmized start time
     start_time = datetime.datetime(year, month, date, 0, 0, 0, 0, tzinfo=TZCHINA)
     recent_posts = db.posts.find({"timestamp": {"$gt": start_time}})
+
     for post in recent_posts:
-        if post['user']['username'] != u'蒋中挺':
-            g.add_node(post['user']['username'], weight=post['fwd_count'])
-            for reply in post['replies']:
-                if reply['user']['username'] != u'蒋中挺':
-                    g.add_node(reply['user']['username'], weight=post['fwd_count'])
-                    g.add_edge(reply['user']['username'], post['user']['username'])
+        user = db.users.find_one({'userid': post['user']['userid']})
+        if user and 'verified' in user.keys():
+            g.add_node(post['user']['username'], weight=post['fwd_count'], verified=str(user['verified']))
+        else:
+            g.add_node(post['user']['username'], weight=post['fwd_count'], verified='False')
+        for reply in post['replies']:
+            re_user = db.users.find_one({'userid': reply['user']['userid']})
+            if re_user and 'verified' in re_user.keys():
+                g.add_node(reply['user']['username'], weight=reply['fwd_count'], verified=str(re_user['verified']))
+            else:
+                g.add_node(reply['user']['username'], weight=reply['fwd_count'], verified='False')
+            g.add_edge(reply['user']['username'], post['user']['username'])
 
     nx.write_gexf(g, output, prettyprint=True)
     log(NOTICE, 'the nework file of "%s" is suceessfully stored in %s.' % (project, output))
@@ -48,20 +55,78 @@ def generate_sematic_network(keywords=[], depth=[10, 10, 10], w2v_file='', gexf_
             if w in keywords:
                 w = keyword
             g.add_node(w)
-            g.add_edge(w, keyword, weight=i)
+            g.add_edge(w, keyword, weight=i * i * 100)
             notice = (w + ' ' + str(i)).encode('gbk', 'ignore')
             log(NOTICE, notice)
             for t, j in model.most_similar(w, topn=depth[1]):
                 g.add_node(t)
-                g.add_edge(t, w, weight=j)
+                g.add_edge(t, w, weight=j * j * 100)
                 notice = (t + ' ' + str(j)).encode('gbk', 'ignore')
                 log(NOTICE, notice)
                 for s, k in model.most_similar(t, topn=depth[2]):
                     g.add_node(s)
-                    g.add_edge(s, t, weight=k)
+                    g.add_edge(s, t, weight=k * k * 100)
                     notice = (s + ' ' + str(k)).encode('gbk', 'ignore')
                     log(NOTICE, notice)
 
+    nx.write_gexf(g, gexf_file, prettyprint=True)
+    log(NOTICE, 'the nework file is suceessfully stored in %s.' % gexf_file)
+
+
+def generate_sematic_network2(keyword, related_keywords, threshold=0.5, w2v_file='', gexf_file=''):
+    model = Word2Vec.load(w2v_file)
+    g = nx.DiGraph()
+    g.add_node(keyword)
+    for related in related_keywords:
+        g.add_node(related)
+        w = model.similarity(keyword, related)
+        print keyword, related, w
+        g.add_edge(related, keyword, weight=int(w * w * 100 / threshold / threshold))
+
+    for related_1 in related_keywords:
+        for related_2 in related_keywords:
+            if related_1 != related_2:
+                w = model.similarity(related_1, related_2)
+                if w > threshold:
+                    g.add_edge(related_2, related_1, weight=int(w * w * 100))
+                    print related_1, related_2, w
+    nx.write_gexf(g, gexf_file, prettyprint=True)
+    log(NOTICE, 'the nework file is suceessfully stored in %s.' % gexf_file)
+
+
+def generate_sematic_network3(keyword, related_keywords, threshold=0.5, depth=10, w2v_file='', gexf_file=''):
+    model = Word2Vec.load(w2v_file)
+    g = nx.DiGraph()
+    g.add_node(keyword)
+    for related in related_keywords:
+        g.add_node(related)
+        w = model.similarity(keyword, related)
+        g.add_edge(related, keyword, weight=int(w * w * 100 / threshold / threshold))
+        print keyword, related, w
+
+    # for related_1 in related_keywords:
+    #     for related_2 in related_keywords:
+    #         if related_1 != related_2:
+    #             p = model.similarity(related_1, related_2)
+    #             g.add_edge(related_2, related_1, weight=int(p*p*100))
+    #             print related_1, related_2, w
+
+    for related in related_keywords:
+        g.add_node(related)
+        for w, i in model.most_similar(related, topn=depth):
+            if i > threshold:
+                g.add_node(w)
+                g.add_edge(w, related, weight=int(i * i * 100))
+                notice = (w + ' ' + str(i)).encode('gbk', 'ignore')
+                log(NOTICE, notice)
+                for t, j in model.most_similar(w, topn=depth):
+                    if j > threshold:
+                        g.add_node(t)
+                        g.add_edge(t, w, weight=int(j * j * 100))
+                        notice = (t + ' ' + str(j)).encode('gbk', 'ignore')
+                        log(NOTICE, notice)
+    # notice = (s + ' ' + str(k)).encode('gbk', 'ignore')
+    # log(NOTICE, notice)
     nx.write_gexf(g, gexf_file, prettyprint=True)
     log(NOTICE, 'the nework file is suceessfully stored in %s.' % gexf_file)
 

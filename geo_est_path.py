@@ -15,7 +15,7 @@ from pymongo import MongoClient
 
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'insurance'
 
 client = MongoClient(address, port)
 db = client[project]

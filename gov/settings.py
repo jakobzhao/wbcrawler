@@ -18,7 +18,7 @@ SETTINGS = {
                'control_days': 30,
                'replies_control_days': 5,
                'min_fwd_times': 2
-           },
+}
 
 SETTINGS2 = {
     'project': 'gov',

@@ -512,7 +512,7 @@ def parse_info(users, robot, db):
             log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
             return False
         if 'location' in user.keys():
-            if user['location'] == u'其他' or user['location'] == u'未知':
+            if user['location'] == '其他' or user['location'] == '未知':
                 continue
         url = "http://weibo.cn/%s/info" % user['userid']
         rd = get_response_as_human(browser, url, 20)
@@ -530,39 +530,40 @@ def parse_info(users, robot, db):
             except AttributeError:
                 continue
 
-            if u'昵称' in info:
-                info = info.replace(u'认证信息：', u'认信:').replace(u'感情状况：', u'感情:').replace(u'性取向：', u'取向:')
+            if '昵称' in info:
+                info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
                 flds = info.split(":")
                 i = 0
                 while i < len(flds) - 1:
-                    if u'性别' in flds[i]:
-                        if u'男' in flds[i + 1]:
+                    if '性别' in flds[i]:
+                        if '男' in flds[i + 1]:
                             gender = 'M'
                         else:
                             gender = 'F'
                             # print gender
-                    if u'地区' in flds[i] and 'location' not in user.keys():  # it is possible the location has already been obatained during the first round.
+                    # if u'地区' in flds[i] and 'location' not in user.keys():  # it is possible the location has already been obatained during the first round.
+                    if '地区' in flds[i]:  # it is possible the location has already been obatained during the first round.
                         loc = flds[i + 1][:-2]
-                        loc = loc.replace(u"海外 ", "")
-                    if u'认信' in flds[i]:
+                        loc = loc.replace("海外 ", "")
+                    if '认信' in flds[i]:
                         verified = True
                         verified_info = flds[i + 1][:-2]
-                        verified_info = verified_info.replace(u'官方微博', '')
+                        verified_info = verified_info.replace('官方微博', '')
                         # print verified_info
-                    if u'生日' in flds[i]:
+                    if '生日' in flds[i]:
                         birthday = flds[i + 1][:-2]
                         # print birthday
                     i += 1
 
                 # location info could be the very last line.
-                if u'地区' in flds[len(flds) - 2] and 'location' not in user.keys():
+                if '地区' in flds[len(flds) - 2] and 'location' not in user.keys():
                     loc = flds[len(flds) - 1]
                 # the value of 地区 could be 未知, 其他.
                 # now having the loc value,
-                if u'地区' not in info and 'location' not in user.keys():
-                    loc = u"未知"
+                if '地区' not in info and 'location' not in user.keys():
+                    loc = "未知"
                     latlng = [-1, -1]
-                elif loc == u"其他":
+                elif loc == "其他":
                     latlng = [-1, -1]
                 else:
                     latlng = geocode(loc)

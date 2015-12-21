@@ -185,7 +185,8 @@ def export_posts(project, address, port, output="op.csv"):
     client = MongoClient(address, port)
     db = client[project]
     f = open(output, 'w')
-    f.write('mid, topic, keyword, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
+    # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
+    f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')
     posts = db.posts.find()
     count = posts.count()
     i = 0
@@ -200,14 +201,15 @@ def export_posts(project, address, port, output="op.csv"):
             verified_info = user['verified_info']
 
         content = post['content'].encode('gbk', 'ignore').decode('gbk', 'ignore')
-        topic = None
+
         if post['topic'] == []:
             topics = ['none']
         else:
             topics = post['topic']
         for topic in topics:
-            line = '%d, %s, %s, %f, %f, %f, %s, %d, %s, %s, %s, %s\n' % (
-            post['mid'], topic, post['keyword'], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+            # line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+            line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s\n' % (
+            post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified)
             f.write(line)
             try:
                 log(NOTICE, line)

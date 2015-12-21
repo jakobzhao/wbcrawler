@@ -13,5 +13,5 @@ from wbcrawler.geo import georeference
 
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'insurance'
 georeference(project, address, port)

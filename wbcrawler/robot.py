@@ -24,6 +24,7 @@ from log import *
 
 
 def register(settings):
+    TIMEOUT = 20
     if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
@@ -81,24 +82,41 @@ def register(settings):
 
     # press click and then the vcode appears.
     browser.find_element_by_class_name('smb_btn').click()
-    time.sleep(3)
+    time.sleep(10)
+    # run = True
+    # # a = browser.find_element_by_partial_link_text('完善资料').text
+    # while run:
+    #     time.sleep(5)
+    #     try:
+    #         a = browser.find_element_by_partial_link_text('完善资料').text
+    #         if a == '完善资料':
+    #             run = False
+    #     except:
+    #         log(NOTICE, "trying ...")
 
-    weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
+    # if a == '完善资料'
+    # else:
+    #     time.sleep(5)
+    # WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, '完善资料')))
 
-    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
-    weibo_tab = browser.find_element_by_xpath(weibo_tab_xpath)
-    weibo_tab.send_keys(Keys.CONTROL + Keys.RETURN)
+    # weibo_tab_xpath = '//*[@id="service_list"]/div[2]/ul/li[1]/a'
+    # WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
 
-    WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
-    # time.sleep(5)
-    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
-    browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
+    # WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.XPATH, weibo_tab_xpath)))
+    # # WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+    # weibo_tab = browser.find_element_by_xpath(weibo_tab_xpath)
+    # weibo_tab.send_keys(Keys.CONTROL + Keys.RETURN)
+    #
+    # WebDriverWait(browser, TIMEOUT).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+    #
+    # browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + Keys.TAB)
+    # browser.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 'w')
 
     # Examing the validity of the account
     test_urls = ['http://s.weibo.com/weibo/love', 'http://weibo.com/1642592432/D0EwmhebV?type=repost']
     passed = False
 
-    rd = get_response_as_human(browser, test_urls[0])
+    rd = get_response_as_human(browser, test_urls[0], page_reload=True, waiting=3)
     soup = BeautifulSoup(rd, 'html5lib')
 
     if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:

@@ -15,28 +15,29 @@ from log import *
 
 
 # hanzi to pinyin
-def to_pinyin(keyword):
-    from pypinyin import lazy_pinyin
-    py = lazy_pinyin(unicode(keyword))
-    result = ''
-    for i in py:
-        result += i
-    return result
+# def to_pinyin(keyword):
+#     from pypinyin import lazy_pinyin
+#     py = lazy_pinyin(unicode(keyword))
+#     result = ''
+#     for i in py:
+#         result += i
+#     return result
 
 
 def get_interval_as_human(low=18, high=22):
     return randint(low, high)
 
 
-def get_response_as_human(browser, url, page_reload=True):
+def get_response_as_human(browser, url, page_reload=True, waiting=-1):
     url_raw = url
     response_data = ''
-    waiting = get_interval_as_human()
+    if waiting == -1:
+        waiting = get_interval_as_human()
     if page_reload:
         while True:
             try:
-                browser.get(url_raw)
                 time.sleep(waiting)
+                browser.get(url_raw)
                 response_data = browser.page_source
                 if response_data != {}:
                     break
@@ -45,8 +46,9 @@ def get_response_as_human(browser, url, page_reload=True):
                 log(NOTICE, 'Web page refreshing')
     else:
         try:
-            browser.get(url_raw)
             time.sleep(waiting)
+            browser.get(url_raw)
+            response_data = browser.page_source
         except TimeoutException:
             log(WARNING, 'timeout', 'get_response_as_human')
     return response_data

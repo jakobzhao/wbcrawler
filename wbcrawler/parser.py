@@ -7,6 +7,7 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
+import sys
 from httplib import BadStatusLine
 import time
 from bs4 import BeautifulSoup
@@ -20,6 +21,8 @@ from utils import get_response_as_human
 from log import *
 from math import log10
 
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 def parse_keyword(keyword, robot, db):
     # client = MongoClient(settings['address'], settings['port'])
@@ -603,7 +606,10 @@ def parse_path(users, robot, db):
         start = datetime.datetime.now()
         # url example: http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=1644114654&starttime=2013-01-01&endtime=2013-12-31
         url = "http://place.weibo.com/index.php?_p=ajax&_a=userfeed&uid=%s&starttime=2014-01-01" % str(user['userid'])
-        log(NOTICE, "parsing the routes from %s." % user['username'])
+        try:
+            log(NOTICE, "parsing the routes from %s." % unicode(user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')))
+        except:
+            pass
         rd = get_response_as_human(browser, url, page_reload=True)
 
         if rd == "":
@@ -670,7 +676,7 @@ def parse_path(users, robot, db):
                 lat = float(lat)
                 lng = float(lng)
                 try:
-                    log(NOTICE, '%s %s latlng (%f, %f)' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), unicode(t_china), lat, lng))
+                    log(NOTICE, '%s %s latlng (%f, %f)' % (unicode(user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore')), unicode(t_china), lat, lng))
                 except UnicodeEncodeError:
                     pass
                 path.append([lat, lng, t_china])

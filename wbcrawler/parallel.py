@@ -8,7 +8,7 @@
 # @organization: Harvard Kennedy School
 import sys
 from multiprocessing.dummy import Pool as ThreadPool
-from multiprocessing.dummy import Lock
+# from multiprocessing.dummy import Lock
 import socket
 
 from pymongo import MongoClient, DESCENDING, ASCENDING
@@ -17,13 +17,11 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 from wbcrawler.robot import register, unregister
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
-from wbcrawler.settings import UTC
 from httplib import BadStatusLine
 from urllib2 import URLError
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
 start = datetime.datetime.now()
 
 
@@ -143,8 +141,8 @@ def info_crawling(rbt):
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
-        # search_json = {'latlng': [0, 0]}
+        # search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
+        search_json = {'latlng': [0, 0]}
         count = db.users.find(search_json).count()
         slc = count / ir
         users = db.users.find(search_json).skip(slc * rbt['id']).limit(slc)

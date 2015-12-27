@@ -9,11 +9,11 @@
 
 SETTINGS = {
     'project': 'climate',
-    'pis': ['chungen_liu@hks.harvard.edu', 'bo_zhao@hks.harvard.edu'],
+    'pis': ['chungen_liu1@hks.harvard.edu', 'bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
-    'address': '192.168.1.12',
+    'address': '127.0.0.1',
     'port': 27017,
-    'robot_num': 1,
+    'robot_num': 16,
     'keywords': ['气候变化', '全球变暖'],
     'control_days': 30,
     'replies_control_days': 5,

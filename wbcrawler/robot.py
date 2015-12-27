@@ -38,7 +38,7 @@ def register(settings):
         log(FATALITY, occupied_msg)
         exit(-1)
 
-    account_raw = client.local[robot_table].find({"inused": False}).limit(1)[0]
+    account_raw = client.local[robot_table].find({"inused": False, 'id': {'$ne': 999}}).limit(1)[0]
     log(NOTICE, 'ROBOT %d is registering...' % account_raw['id'])
 
     # sign in the robot
@@ -186,9 +186,12 @@ def create_database(settings, fresh=False):
         db.posts.delete_many({})
         db.users.delete_many({})
 
-    posts.create_index([("mid", DESCENDING)], unique=True, sparse=True)
-    users.create_index([("userid", DESCENDING)], unique=True)
-    posts.delete_many({"mid": None})
+    try:
+        posts.create_index([("mid", DESCENDING)], unique=True, sparse=True)
+        users.create_index([("userid", DESCENDING)], unique=True)
+        posts.delete_many({"mid": None})
+    except:
+        pass
     return db
 
 

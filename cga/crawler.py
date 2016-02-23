@@ -10,8 +10,10 @@
 import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
-sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/cga")
+# sys.path.append("/home/bo/Workspace/wbcrawler")
+# sys.path.append("/home/bo/Workspace/wbcrawler/cga")
+sys.path.append("/home/bo/wbcrawler")
+sys.path.append("/home/bo/wbcrawler/cga")
 
 from wbcrawler.parser import parse_discovery
 from wbcrawler.robot import register, unregister, create_database, unlock_robots

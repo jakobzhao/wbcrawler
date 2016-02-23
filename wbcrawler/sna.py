@@ -149,14 +149,16 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
         i += 1
         print i
         stop = False
-        reposts = [u'//', u'repost', u'转发微博', u'轉發微博']
+        reposts = [u'repost', u'转发微博', u'轉發微博']
         for repost in reposts:
             if repost in post['content'] or post['content'] == u'':
                 stop = True
                 break
         if stop:
             continue
-        username = post['user']['username'].encode('utf-8', 'ignore')
+
+        # username = post['user']['username'].encode('utf-8', 'ignore')
+        username = post['user']['username']
         userid = post['user']['userid']
         fwd_count = post['fwd_count']
 
@@ -165,6 +167,7 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
         else:
             users[username] = {}
             users[username]['fwd_count'] = fwd_count
+
         if db.users.find({'userid': userid}).count() >= 1:
             user = db.users.find_one({'userid': userid})
             users[username]['verified'] = user['verified']
@@ -172,7 +175,7 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
 
     for user in users:
         try:
-            line = '%s, %s, %s, %d\n' % (user.encode('gbk', 'ignore'), str(users[user]['verified']), users[user]['verified_info'].encode('gbk', 'ignore'), users[user]['fwd_count'])
+            line = '%s, %s, %s, %d\n' % (user, str(users[user]['verified']), users[user]['verified_info'], users[user]['fwd_count'])
             f.write(line)
             log(NOTICE, line)
         except:
@@ -185,8 +188,8 @@ def export_posts(project, address, port, output="op.csv"):
     client = MongoClient(address, port)
     db = client[project]
     f = open(output, 'w')
-    # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
-    f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')
+    f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
+    # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')
     posts = db.posts.find()
     count = posts.count()
     i = 0
@@ -202,19 +205,32 @@ def export_posts(project, address, port, output="op.csv"):
 
         content = post['content'].encode('gbk', 'ignore').decode('gbk', 'ignore')
 
-        if post['topic'] == []:
-            topics = ['none']
-        else:
-            topics = post['topic']
-        for topic in topics:
-            # line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
-            line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s\n' % (
-            post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified)
-            f.write(line)
-            try:
-                log(NOTICE, line)
-            except:
-                pass
+        # =================IF HAVING TOPIC==============================
+        # if post['topic'] == []:
+        #     topics = ['none']
+        # else:
+        #     topics = post['topic']
+        # for topic in topics:
+        #     # line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+        #     line = '%d, %s, %s, %f, %f, %f, %f, %f, %s, %d, %s, %s\n' % (
+        #     post['mid'], topic, post['keyword'], post['latlng'][0], post['latlng'][1], float(post['sentiment']), float(post['pos']), float(post['neg']), str(post['timestamp']), int(post['fwd_count']), username, verified)
+        #     f.write(line)
+        #     try:
+        #         log(NOTICE, line)
+        #     except:
+        #         pass
+        # =================IF HAVING TOPIC==============================
+        try:
+            line = '%d, %s, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1], str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+            # line = '%d, %s, %f, %f, %s, %d, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1],  str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info)
+        except KeyError:
+            pass
+
+        f.write(line)
+        try:
+            log(NOTICE, line)
+        except:
+            pass
     f.close()
     log(NOTICE, 'mission completes')
 if __name__ == '__main__':

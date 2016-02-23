@@ -17,6 +17,7 @@ from selenium.common.exceptions import StaleElementReferenceException, TimeoutEx
 from wbcrawler.robot import register, unregister
 from wbcrawler.parser import parse_repost, parse_path, parse_info
 from wbcrawler.log import *
+from wbcrawler.settings import UTC
 from httplib import BadStatusLine
 from urllib2 import URLError
 
@@ -97,13 +98,15 @@ def repost_crawling(rbt):
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        # utc_end = datetime.datetime(2015, 11, 11, 0, 0, 0, 0, tzinfo=UTC)
+        utc_end = datetime.datetime(2015, 10, 29, 0, 0, 0, 0, tzinfo=UTC)
         # search_json = {"timestamp": {"$gt": utc_now}, "timestamp": {"$lt": utc_end}, 'keyword': {'$ne': '五中全会'}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}
-        search_json = {"timestamp": {"$gt": utc_now}, "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "deleted": {"$eq": None}}
+        # search_json = {"timestamp": {"$gt": utc_now}, {"$and": ["fwd_count": {"$gt": rbt['settings']['min_fwd_times']}, "fwd_count": {"$gt": 200000}]}, "deleted": {"$eq": None}}
+        search_json = {"timestamp": {"$gt": utc_end}, '$and': [{"fwd_count": {"$gt": 99}}, {"fwd_count": {"$lt": 100000000}}], "replies": {"$eq": []}, "deleted": {"$eq": None}}
         # search_json = {"keyword": u'新型城镇化', "fwd_count": {"$gt": rbt['settings']['min_fwd_times']}}
         count = db.posts.find(search_json).count()
         slc = count / rr
-        posts = db.posts.find(search_json).skip(slc * rbt['id']).limit(slc)  # .sort([('mid', DESCENDING), ('fwd_count', ASCENDING)])
+
+        posts = db.posts.find(search_json).skip(slc * rbt['id']).limit(slc)  # .sort({'fwd_count': -1}). .sort([('mid', DESCENDING), ('fwd_count', ASCENDING)])
         parse_repost(posts, rbt, db)
         log(NOTICE, "Time per round: %d mins." % int((datetime.datetime.now() - round_start).seconds / 60))
     except KeyboardInterrupt:
@@ -141,8 +144,9 @@ def info_crawling(rbt):
     db = client[rbt['settings']['project']]
     try:
         round_start = datetime.datetime.now()
-        # search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
-        search_json = {'latlng': [0, 0]}
+        search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
+        # search_json = {'latlng': [0, 0]}
+        # search_json = {'msg': {'$exists': False}}
         count = db.users.find(search_json).count()
         slc = count / ir
         users = db.users.find(search_json).skip(slc * rbt['id']).limit(slc)

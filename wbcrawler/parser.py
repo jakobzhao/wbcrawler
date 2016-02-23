@@ -17,7 +17,7 @@ from settings import TIMEOUT, UTC, TZCHINA
 from utils import get_interval_as_human
 from decode import mid_to_token
 from geo import geocode
-from utils import get_response_as_human
+from utils import get_response_as_human, get_response_to_end_as_human
 from log import *
 from math import log10
 
@@ -94,6 +94,59 @@ def parse_keyword(keyword, robot, db):
         log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
     return True
 
+
+# parse the discovery page
+def parse_discovery(d_type, robot, db):
+    # client = MongoClient(settings['address'], settings['port'])
+    # db = client[settings['project']]
+    browser = robot['browser']
+    # settings = robot['settings']
+    d_type_value = d_type.values()[0]
+    url_base = 'http://d.weibo.com/102803_ctg1_%d_-_ctg1_%d?page=' % (d_type_value, d_type_value)
+
+    # url_base = 'http://d.weibo.com/102803?feed_filter=102803_ctg1_9999_-_ctg1_9999&page='
+    pages = 6
+
+    stop_flag = False
+
+    # if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
+    #     log(WARNING, "No pagelist element is detected, meaning the robot is not properly logged on, so forced to log out.")
+    #     return stop_flag
+    # else:
+    #     pages = len((soup.find('div', {'node-type': 'feed_list_page_morelist'})).findAll('li'))
+
+    log(NOTICE, '%d pages in total, catogary: %s.' % (pages + 1, d_type.keys()[0]))
+
+    for i in range(pages):
+        start = datetime.datetime.now()
+        url = url_base + str(i + 1)
+        log(NOTICE, 'processing the webpage %s...' % url.decode("utf-8"))
+        rd = get_response_to_end_as_human(browser, url)
+
+        posts = BeautifulSoup(rd, 'html5lib').findAll('div', {'action-type': 'feed_list_item'})
+        log(NOTICE, "%d posts in Page %d" % (len(posts), pages))
+        for post in posts:
+            json_data = parse_post(post)
+            try:
+                db.users.insert_one(json_data['user'])
+            except errors.DuplicateKeyError:
+                log(NOTICE, 'The user has already been inserted to the database.')
+
+            try:
+                db.posts.insert_one(json_data['post'])
+            except KeyError, e:
+                log(ERROR, 'BeautifulSoup does not work properly.' + e.message)
+            except errors.DuplicateKeyError:
+                log(NOTICE, 'UPDATING...')
+
+                db.posts.update({'mid': json_data['post']['mid']},
+                                {'$set': {'fwd_count': json_data['post']['fwd_count'],
+                                          'cmd_count': json_data['post']['cmt_count'],
+                                          'like_count': json_data['post']['like_count'],
+                                          }
+                                 })
+        log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
+    return True
 
 def update_keyword(keyword, now):
     print keyword, now
@@ -185,7 +238,7 @@ def parse_item(post, keyword):
     return result_json
 
 
-def parse_post(post, keyword):
+def parse_post(post, keyword=''):
     userid, fwd_count, cmt_count, like_count, user_name = 0, 0, 0, 0, ''
     # primary key mid
     mid = int(post.attrs['mid'])
@@ -196,10 +249,12 @@ def parse_post(post, keyword):
         else:
             user_name = post.find("img", class_="W_face_radius").attrs['alt']
 
-        if "usercard" in post.find('a', class_='W_texta W_fb').attrs.keys():
-            userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
-            userid = int(userid_tmp[3:userid_tmp.index("&")])
-        elif "usercard" in post.find('img', class_='W_face_radius').attrs.keys():
+        if post.find('a', class_='W_texta W_fb') is not None:
+            if "usercard" in post.find('a', class_='W_texta W_fb').attrs.keys():
+                userid_tmp = post.find('a', class_='W_texta W_fb').attrs['usercard']
+                userid = int(userid_tmp[3:userid_tmp.index("&")])
+
+        if "usercard" in post.find('img', class_='W_face_radius').attrs.keys():
             userid_tmp = post.find('img', class_='W_face_radius').attrs['usercard']
             userid = int(userid_tmp[3:userid_tmp.index("&")])
         else:
@@ -215,22 +270,39 @@ def parse_post(post, keyword):
         user_verified = True
 
     # the content of a weibo (tweet)
-    content = post.find('p', class_='comment_txt').get_text()
+    if post.find('p', class_='comment_txt') is not None:
+        content = post.find('p', class_='comment_txt').get_text()
+    else:
+        content = post.find('div', class_='WB_text W_f14').get_text()
 
     # counts: relies, cmts, likes
     if post.find('a', {'action-type': 'feed_list_forward'}) is not None:
         fwd_count = int(post.find('a', {'action-type': 'feed_list_forward'}).get_text().replace(u"转发", "0"))
         cmt_count = int(post.find('a', {'action-type': 'feed_list_comment'}).get_text().replace(u"评论", "0"))
         like_count = int("0" + post.find('a', {'action-type': 'feed_list_like'}).get_text())
+    elif post.find('a', {'action-type': 'fl_forward'}) is not None:
+        try:
+            fwd_count = int(post.find('a', {'action-type': 'fl_forward'}).get_text().replace(u"转发 ", "0"))
+        except:
+            fwd_count = 0
+        try:
+            cmt_count = int(post.find('a', {'action-type': 'fl_comment'}).get_text().replace(u"评论 ", "0"))
+        except:
+            cmt_count = 0
+        try:
+            like_count = int("0" + post.find('a', {'action-type': 'fl_like'}).get_text().replace(u" ", "0"))
+        except:
+            like_count = 0
     else:
         lis_panel = post.find("ul", class_="feed_action_info feed_action_row4")
-        lis = lis_panel.findAll("li")
-        for li in lis:
-            if u"转发" in li.get_text():
-                fwd_count = int("0" + li.get_text().replace(u"转发", ""))
-            if u"评论" in li.get_text():
-                cmt_count = int("0" + li.get_text().replace(u"评论", ""))
-            like_count = int("0" + lis[len(lis) - 1].get_text())
+        if lis_panel is not None:
+            lis = lis_panel.findAll("li")
+            for li in lis:
+                if u"转发" in li.get_text():
+                    fwd_count = int("0" + li.get_text().replace(u"转发", ""))
+                if u"评论" in li.get_text():
+                    cmt_count = int("0" + li.get_text().replace(u"评论", ""))
+                like_count = int("0" + lis[len(lis) - 1].get_text())
 
     # location
     loc, latlng = '', [0, 0]
@@ -238,7 +310,10 @@ def parse_post(post, keyword):
         if 'title' in post.find('span', class_='W_btn_tag').attrs:
             loc = post.find('span', class_='W_btn_tag').attrs['title']
             latlng = geocode(loc)
-
+    elif post.find('i', class_='W_ficon ficon_cd_place S_ficon') is not None:
+        if 'title' in post.find('a', class_='W_btn_cardlink').attrs:
+            loc = post.find('a', class_='W_btn_cardlink').attrs['title']
+            latlng = geocode(loc)
     # timestamp
     # t = '2015-10-05 08:51'
     try:
@@ -311,10 +386,12 @@ def flow_contrl(current, total):
     if total == 0 or total == 1:
         pass
     elif total in range(2, 100):
-        if current / float(total) > 0.5:
+        # if current / float(total) > 0.5:
+        if current / float(total) > 0.8:
             control = True
     else:
-        if current / float(total) > (1 / float(log10(total))):
+        if current / float(total) > (1 / (float(log10(total)) - 1)):
+            # if current / float(total) > 0.6:
             control = True
     return control
 
@@ -332,8 +409,16 @@ def parse_repost(posts, robot, db):
     log(NOTICE, "Processing %d of %d posts, start from #%d." % (count, all, start_from))
     # Error pymongo.errors.CursorNotFound:
     for post in posts:
+        # ========================extra flow control====================================
+
+        if flow_contrl(len(post['replies']), post['fwd_count']):
+            print len(post['replies'])
+            print post['fwd_count']
+            log(NOTICE, 'flow controled')
+            continue
+        # ========================extra flow control====================================
         # token url exmple: http://weibo.com/3693685493/CEtFjkHwM?type=repost
-        # 1. Determine the URL
+        # 1. Determining the URL
         token = mid_to_token(post['mid'])
         url = "http://weibo.com/%s/%s?type=repost" % (str(post['user']['userid']), token)
         log(NOTICE, "Parsing the repost at %s, %d posts left." % (url, (count - cur)))
@@ -508,79 +593,92 @@ def parse_info(users, robot, db):
     cur = 0
     log(NOTICE, " Processing %d of %d users, start from #%d." % (count, all, start_from))
     for user in users:
-        log(NOTICE, "%d users remain." % (count - cur))
-        cur += 1
-        start = datetime.datetime.now()
-        if "weibo.com/login.php?url=" in browser.current_url:
-            log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
-            return False
-        if 'location' in user.keys():
-            if user['location'] == '其他' or user['location'] == '未知':
-                continue
-        url = "http://weibo.cn/%s/info" % user['userid']
-        rd = get_response_as_human(browser, url, 20)
-        gender, birthday, verified, verified_info, loc, latlng = '', 1900, False, '', '', [-1.0, -1.0]
+        try:
+            log(NOTICE, "%d users remain." % (count - cur))
+            cur += 1
+            start = datetime.datetime.now()
+            # if "weibo.com/login.php?url=" in browser.current_url:
+            #    log(WARNING, "This robot is not properly logged on while visiting %s, will have another try..." % url)
+            #    return False
+            if 'location' in user.keys():
+                if user['location'] == '其他' or user['location'] == '未知':
+                    continue
+            url = "http://weibo.cn/%s/info" % user['userid']
+            rd = get_response_as_human(browser, url, 20)
+            gender, birthday, verified, verified_info, loc, latlng = '', 1900, False, '', '', [-1.0, -1.0]
 
-        # test
-        # f = open("../data/parse_profile_%s.html" % user['userid'], "w")
-        # f.write(str(rd))
-        # f.close()
+            # test
+            # f = open("../data/parse_profile_%s.html" % user['userid'], "w")
+            # f.write(str(rd))
+            # f.close()
 
-        tabs = BeautifulSoup(rd, 'html5lib').findAll("div", class_="c")
-        for tab in tabs:
-            try:
-                info = tab.get_text()
-            except AttributeError:
-                continue
+            tabs = BeautifulSoup(rd, 'html5lib').findAll("div", class_="c")
+            for tab in tabs:
+                try:
+                    info = tab.get_text()
+                except AttributeError:
+                    continue
 
-            if '昵称' in info:
-                info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
-                flds = info.split(":")
-                i = 0
-                while i < len(flds) - 1:
-                    if '性别' in flds[i]:
-                        if '男' in flds[i + 1]:
-                            gender = 'M'
-                        else:
-                            gender = 'F'
-                            # print gender
-                    # if u'地区' in flds[i] and 'location' not in user.keys():  # it is possible the location has already been obatained during the first round.
-                    if '地区' in flds[i]:  # it is possible the location has already been obatained during the first round.
-                        loc = flds[i + 1][:-2]
-                        loc = loc.replace("海外 ", "")
-                    if '认信' in flds[i]:
-                        verified = True
-                        verified_info = flds[i + 1][:-2]
-                        verified_info = verified_info.replace('官方微博', '')
-                        # print verified_info
-                    if '生日' in flds[i]:
-                        birthday = flds[i + 1][:-2]
-                        # print birthday
-                    i += 1
+                if '昵称' in info:
+                    info = info.replace('认证信息：', '认信:').replace('感情状况：', '感情:').replace('性取向：', '取向:')
+                    flds = info.split(":")
+                    i = 0
+                    while i < len(flds) - 1:
+                        if '性别' in flds[i]:
+                            if '男' in flds[i + 1]:
+                                gender = 'M'
+                            else:
+                                gender = 'F'
+                                # print gender
+                        # if u'地区' in flds[i] and 'location' not in user.keys():  # it is possible the location has already been obatained during the first round.
+                        if '地区' in flds[i]:  # it is possible the location has already been obatained during the first round.
+                            loc = flds[i + 1][:-2]
+                            loc = loc.replace("海外 ", "")
+                        if '认信' in flds[i]:
+                            verified = True
+                            verified_info = flds[i + 1][:-2]
+                            verified_info = verified_info.replace('官方微博', '')
+                            # print verified_info
+                        if '生日' in flds[i]:
+                            birthday = flds[i + 1][:-2]
+                            # print birthday
+                        i += 1
 
-                # location info could be the very last line.
-                if '地区' in flds[len(flds) - 2] and 'location' not in user.keys():
-                    loc = flds[len(flds) - 1]
-                # the value of 地区 could be 未知, 其他.
-                # now having the loc value,
-                if '地区' not in info and 'location' not in user.keys():
-                    loc = "未知"
-                    latlng = [-1, -1]
-                elif loc == "其他":
-                    latlng = [-1, -1]
-                else:
-                    latlng = geocode(loc)
+                    # location info could be the very last line.
+                    if '地区' in flds[len(flds) - 2] and 'location' not in user.keys():
+                        loc = flds[len(flds) - 1]
+                    # the value of 地区 could be 未知, 其他.
+                    # now having the loc value,
+                    if '地区' not in info and 'location' not in user.keys():
+                        loc = "未知"
+                        latlng = [-1, -1]
+                    elif loc == "其他":
+                        latlng = [-1, -1]
+                    else:
+                        latlng = geocode(loc)
 
-        db.users.update({'userid': user['userid']}, {'$set': {
-            'gender': gender,
-            'birthday': birthday,
-            'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
-            'verified': verified,
-            'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
-            'latlng': latlng
-        }})
+            if user['latlng'] == [-1.0, -1.0] or user['latlng'] == [0, 0]:
+                db.users.update({'userid': user['userid']}, {'$set': {
+                    'gender': gender,
+                    'birthday': birthday,
+                    'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'verified': verified,
+                    'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'latlng': latlng,
+                    'msg': 'parse_info has already conducted.'
+                }})
+            else:
+                db.users.update({'userid': user['userid']}, {'$set': {
+                    'gender': gender,
+                    'birthday': birthday,
+                    'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'verified': verified,
+                    'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'msg': 'parse_info has already conducted.'
+                }})
+        except:
+            pass
 
-        # print unicode(gender), birthday, verified_info, loc, latlng[0], latlng[1]
         try:
             log(NOTICE, '%s %s latlng (%f, %f).' % (user['username'].encode('utf-8', 'ignore').decode('utf-8', 'ignore'), loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'), latlng[0], latlng[1]))
         except UnicodeEncodeError:

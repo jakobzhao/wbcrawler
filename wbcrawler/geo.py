@@ -136,8 +136,9 @@ def georeference(project, address, port):
     from pymongo import MongoClient
     client = MongoClient(address, port)
     db = client[project]
-    posts = db.posts.find()
-    count = db.posts.find().count()
+    search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
+    posts = db.posts.find(search_json)
+    count = db.posts.find(search_json).count()
     i = 0
     for post in posts:
         # userid = post['user']['userid']

@@ -15,7 +15,7 @@ sys.path.append("/home/bo/Workspace/wbcrawler")
 from wbcrawler.log import *
 from pymongo import MongoClient
 
-address = '192.168.1.12'
+address = 'localhost'
 port = 27017
 project = 'climate'
 

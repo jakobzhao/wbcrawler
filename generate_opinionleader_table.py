@@ -14,8 +14,9 @@ sys.setdefaultencoding('utf-8')
 
 # Variables
 # address = "192.168.1.12"
+#  GEM鄧紫棋
 address = "localhost"
 port = 27017
-project = 'five'
+project = 'donor'
 
-opinion_leaders(project, address, port, "five-1117.csv", 2015, 10, 1)
+opinion_leaders(project, address, port, "donor-user-20160112.csv", 2000, 11, 1)

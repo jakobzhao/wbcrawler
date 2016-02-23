@@ -13,6 +13,6 @@ from wbcrawler.geo import geocode_by_semantics
 
 address = "localhost"
 port = 27017
-project = 'insurance'
+project = 'donor'
 
 geocode_by_semantics(project, address, port)

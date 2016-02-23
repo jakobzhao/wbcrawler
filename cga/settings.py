@@ -7,7 +7,7 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
-SETTINGS = {
+SETTINGS2 = {
     'project': 'cga',
     'pis': ['bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
@@ -21,17 +21,16 @@ SETTINGS = {
     'min_fwd_times': 2
 }
 
-
-# SETTINGS = {
-#     'project': 'cga',
-#     'pis': ['bo_zhao@hks.harvard.edu'],
-#     'robot_table': 'accounts',
-#     'address': '127.0.0.1',
-#     'port': 27017,
-#     'robot_num': 1,
-#     'control_days': 9999,
-#     'keywords': [],
-#     'd_types': [{'1h': 9999}],
-#     'replies_control_days': 9999,
-#     'min_fwd_times': 2
-# }
+SETTINGS = {
+    'project': 'cga',
+    'pis': ['bo_zhao@hks.harvard.edu'],
+    'robot_table': 'accounts',
+    'address': '127.0.0.1',
+    'port': 27017,
+    'robot_num': 1,
+    'control_days': 9999,
+    'keywords': [],
+    'd_types': [{'1h': 9999}],
+    'replies_control_days': 9999,
+    'min_fwd_times': 2
+}

@@ -15,8 +15,8 @@
 import sys
 
 sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
-sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/cga")
+sys.path.append("/home/bo/wbcrawler")
+sys.path.append("/home/bo/wbcrawler/cga")
 
 from wbcrawler.report import brief_report
 from settings import SETTINGS

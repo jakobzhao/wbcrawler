@@ -35,19 +35,19 @@ for i in range(t):
     else:
         break
 
-db = create_database(SETTINGS)
-
-# for d_type in SETTINGS['d_types']:
-for d_type_num in range(len(SETTINGS['d_types'])):
-    round_start = datetime.datetime.now()
-    parse_discovery(SETTINGS['d_types'][d_type_num], robot, db)
-    log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (SETTINGS['d_types'][d_type_num].keys()[0].decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
-
-log(ERROR, 'An error occurs.', 'crawler.py')
-
-# out of the stak
-unregister(robot)
-log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))
+try:
+    db = create_database(SETTINGS)
+    # for d_type in SETTINGS['d_types']:
+    for d_type_num in range(len(SETTINGS['d_types'])):
+        round_start = datetime.datetime.now()
+        parse_discovery(SETTINGS['d_types'][d_type_num], robot, db)
+        log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (SETTINGS['d_types'][d_type_num].keys()[0].decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
+except:
+    log(ERROR, 'An error occurs.', 'crawler.py')
+finally:
+    # out of the stak
+    unregister(robot)
+    log(NOTICE, 'The completion of processing all keywords. Time: %d min(s)' % int((datetime.datetime.now() - start).seconds / 60))
 
 if __name__ == '__main__':
     pass

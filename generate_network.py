@@ -15,4 +15,4 @@ address = "localhost"
 port = 27017
 project = 'climate'
 
-generate_network(project, address, port, "climate-20160103.gexf", 2015, 11, 1)
+generate_network(project, address, port, "climate-20160222.gexf", 2015, 9, 1)

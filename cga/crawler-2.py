@@ -43,7 +43,7 @@ try:
         parse_discovery(SETTINGS['d_types'][d_type_num], robot, db)
         log(NOTICE, 'The completion of processing the keyword "%s". Time: %d sec(s)' % (SETTINGS['d_types'][d_type_num].keys()[0].decode('utf-8'), int((datetime.datetime.now() - round_start).seconds)))
 except:
-    log(ERROR, 'An error occurs.', 'crawler.py')
+    log(ERROR, 'An error occurs .', 'crawler.py')
 finally:
     # out of the stak
     unregister(robot)

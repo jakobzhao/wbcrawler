@@ -17,6 +17,6 @@ sys.setdefaultencoding('utf-8')
 #  GEM鄧紫棋
 address = "localhost"
 port = 27017
-project = 'donor'
+project = 'climate'
 
-opinion_leaders(project, address, port, "donor-user-20160112.csv", 2000, 11, 1)
+opinion_leaders(project, address, port, "climate-user-20160224.csv", 2000, 11, 1)

@@ -21,7 +21,7 @@ from wbcrawler.log import *
 from settings import SETTINGS5 as SETTINGS
 
 # unlock the unreleased robots
-unlock_robots(SETTINGS)
+# unlock_robots(SETTINGS)
 
 # start to crawl
 start = datetime.datetime.now()

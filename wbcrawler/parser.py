@@ -76,7 +76,7 @@ def parse_keyword(keyword, robot, db):
                 if i == 0 or delta.days < settings['control_days']:
                     db.posts.update({'mid': json_data['post']['mid']},
                                     {'$set': {'fwd_count': json_data['post']['fwd_count'],
-                                              'cmd_count': json_data['post']['cmt_count'],
+                                              'cmt_count': json_data['post']['cmt_count'],
                                               'like_count': json_data['post']['like_count'],
                                               }
                                      })
@@ -141,7 +141,7 @@ def parse_discovery(d_type, robot, db):
 
                 db.posts.update({'mid': json_data['post']['mid']},
                                 {'$set': {'fwd_count': json_data['post']['fwd_count'],
-                                          'cmd_count': json_data['post']['cmt_count'],
+                                          'cmt_count': json_data['post']['cmt_count'],
                                           'like_count': json_data['post']['like_count'],
                                           }
                                  })

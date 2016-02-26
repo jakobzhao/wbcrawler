@@ -165,7 +165,8 @@ def parallel_crawling(rr, pr, ir, settings):
 
     # Open the urls in their own threads
     # and return the results
-    try: sud
+    try:
+        robots = create_robots(rr, pr, ir, settings)
         pool.map(crawling_job, robots)
     except NameError, e:
         log(FATALITY, 'NameError: ' + e.message, 'parallel_crawlling')

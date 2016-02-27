@@ -54,6 +54,7 @@ def get_response_as_human(browser, url, page_reload=True, waiting=-1):
     return response_data
 
 
+# scroll down to the end of a web page in order to load more content.
 def get_response_to_end_as_human(browser, url, page_reload=True, waiting=-1):
     from selenium.webdriver.common.keys import Keys
     url_raw = url

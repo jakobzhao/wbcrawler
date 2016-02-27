@@ -12,6 +12,10 @@ from wbcrawler.log import *
 from pymongo import MongoClient
 
 # Variables
+# before executing this script, I need to collect the path.
+# if having the path, then I can tell the location. A mark is necessary.
+# if no path, then I need to use the locational information in the profile. So before the second step(-2.py), I need to collect the profile inforamtion.
+# sometimes, the semantic content can be used as well.
 
 address = "localhost"
 port = 27017

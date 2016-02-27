@@ -148,6 +148,7 @@ def parse_discovery(d_type, robot, db):
         log(NOTICE, 'Processing Page#%d in %d sec(s).' % (i + 1, int((datetime.datetime.now() - start).seconds)))
     return True
 
+
 def update_keyword(keyword, now):
     print keyword, now
 
@@ -305,15 +306,19 @@ def parse_post(post, keyword=''):
                 like_count = int("0" + lis[len(lis) - 1].get_text())
 
     # location
-    loc, latlng = '', [0, 0]
+    loc, latlng, accuracy, flag = '', [0, 0], 0, 0
     if post.find('span', class_='W_btn_tag') is not None:
         if 'title' in post.find('span', class_='W_btn_tag').attrs:
             loc = post.find('span', class_='W_btn_tag').attrs['title']
             latlng = geocode(loc)
+            accuracy = 100
+            flag = 1
     elif post.find('i', class_='W_ficon ficon_cd_place S_ficon') is not None:
         if 'title' in post.find('a', class_='W_btn_cardlink').attrs:
             loc = post.find('a', class_='W_btn_cardlink').attrs['title']
             latlng = geocode(loc)
+            accuracy = 100
+            flag = 1
     # timestamp
     # t = '2015-10-05 08:51'
     try:
@@ -338,6 +343,8 @@ def parse_post(post, keyword=''):
             "like_count": like_count,
             "location": loc,
             "latlng": latlng,
+            "accuracy": accuracy,
+            "flag": flag,
             "sentiment": 0,
             "user": {
                 "userid": userid,
@@ -356,6 +363,8 @@ def parse_post(post, keyword=''):
             "birthday": 1900,
             "location": loc,
             "latlng": latlng,
+            "accuracy": accuracy,
+            "flag": flag,
             "follower_count": 0,
             "friend_count": 0,
             "path": []

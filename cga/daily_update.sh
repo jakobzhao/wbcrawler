@@ -11,5 +11,5 @@ cd /home/bo/wbcrawler
 sudo git checkout --force
 sudo git pull
 echo "the program has updated to the latest version"
-echo "the crawler has rebooted."
+echo "the crawler has rebooted. "
 sudo shutdown -r now

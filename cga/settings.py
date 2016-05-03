@@ -7,13 +7,14 @@
 # @website:      http://yenching.org
 # @organization: Harvard Kennedy School
 
+# all the hottest posts in the past hour.
 SETTINGS = {
     'project': 'cga',
     'pis': ['bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
     'address': '127.0.0.1',
     'port': 27017,
-    'robot_num': 10,
+    'robot_num': 4,
     'control_days': 9999,
     'keywords': [],
     'd_types': [{'1h': 9999}],
@@ -30,7 +31,7 @@ SETTINGS2 = {
     'robot_num': 10,
     'control_days': 9999,
     'keywords': [],
-                'd_types': [{u'社会': 4188}, {u'国际': 6288}, {u'科技': 2088}, {u'科普': 5988}, {u'数码': 5088}, {u'财经': 6388}, {u'股市': 1288}, {u'明星': 4288}, {u'综艺': 4688}, {u'电视剧': 2488}, {u'电影': 3288}],
+    'd_types': [{u'社会': 4188}, {u'国际': 6288}, {u'科技': 2088}, {u'科普': 5988}, {u'数码': 5088}, {u'财经': 6388}, {u'股市': 1288}, {u'明星': 4288}, {u'综艺': 4688}, {u'电视剧': 2488}, {u'电影': 3288}],
     'replies_control_days': 9999,
     'min_fwd_times': 2
 }
@@ -44,7 +45,7 @@ SETTINGS3 = {
     'robot_num': 10,
     'control_days': 9999,
     'keywords': [],
-                'd_types': [{u'音乐': 5288}, {u'汽车': 5188}, {u'体育': 1388}, {u'运动': 4788}, {u'健康': 2188}, {u'廋身': 6488}, {u'养生': 6588}, {u'军事': 6688}, {u'历史': 6788}, {u'模特': 6288}, {u'美图': 4988}, {u'情感': 1988}],
+    'd_types': [{u'音乐': 5288}, {u'汽车': 5188}, {u'体育': 1388}, {u'运动': 4788}, {u'健康': 2188}, {u'廋身': 6488}, {u'养生': 6588}, {u'军事': 6688}, {u'历史': 6788}, {u'模特': 6288}, {u'美图': 4988}, {u'情感': 1988}],
     'replies_control_days': 9999,
     'min_fwd_times': 2
 }

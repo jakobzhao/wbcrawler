@@ -24,7 +24,7 @@ from wbcrawler.settings import UTC, TZCHINA
 def main():
     address = "localhost"
     port = 27017
-    project = 'insurance'
+    project = 'climate'
     client = MongoClient(address, port)
     db = client[project]
     words = []

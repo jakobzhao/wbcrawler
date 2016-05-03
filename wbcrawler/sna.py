@@ -27,19 +27,40 @@ def generate_network(project, address, port, output="wbcrawler.gexf", year=2015,
     # from the custmized start time
     start_time = datetime.datetime(year, month, date, 0, 0, 0, 0, tzinfo=TZCHINA)
     recent_posts = db.posts.find({"timestamp": {"$gt": start_time}})
-
+    t = 0
     for post in recent_posts:
+        t += 1
+        print t
+        # if t == 2000:
+        #     break
         user = db.users.find_one({'userid': post['user']['userid']})
+
+        verified, lat, lng = 'False', '0', '0'
         if user and 'verified' in user.keys():
-            g.add_node(post['user']['username'], weight=post['fwd_count'], verified=str(user['verified']))
+            verified = str(user['verified'])
+        if user and 'latlng' in user.keys():
+            lat = user['latlng'][0]
+            lng = user['latlng'][1]
+
+        if post['user']['username'] not in g.nodes():
+            g.add_node(post['user']['username'], weight=post['fwd_count'], verified=verified, lat=lat, lng=lng)
         else:
-            g.add_node(post['user']['username'], weight=post['fwd_count'], verified='False')
+            current_weight = int(g.node[post['user']['username']]['weight'])
+            g.add_node(post['user']['username'], weight=post['fwd_count'] + current_weight, verified=verified, lat=lat, lng=lng)
+
         for reply in post['replies']:
             re_user = db.users.find_one({'userid': reply['user']['userid']})
+
+            re_verified, re_lat, re_lng = 'False', '0', '0'
             if re_user and 'verified' in re_user.keys():
-                g.add_node(reply['user']['username'], weight=reply['fwd_count'], verified=str(re_user['verified']))
-            else:
-                g.add_node(reply['user']['username'], weight=reply['fwd_count'], verified='False')
+                re_verified = str(re_user['verified'])
+            if re_user and 'latlng' in re_user.keys():
+                re_lat = re_user['latlng'][0]
+                re_lng = re_user['latlng'][1]
+
+            if reply['user']['username'] not in g.nodes():
+                g.add_node(reply['user']['username'], weight=0, verified=re_verified, lat=re_lat, lng=re_lng)
+
             g.add_edge(reply['user']['username'], post['user']['username'])
 
     nx.write_gexf(g, output, prettyprint=True)
@@ -173,9 +194,16 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
             users[username]['verified'] = user['verified']
             users[username]['verified_info'] = user['verified_info']
 
+        try:
+            users[username]['lat'] = post['latlng'][0]
+            users[username]['lng'] = post['latlng'][1]
+        except:
+            lat = 0
+            lng = 0
+
     for user in users:
         try:
-            line = '%s, %s, %s, %d\n' % (user, str(users[user]['verified']), users[user]['verified_info'], users[user]['fwd_count'])
+            line = '%s, %s, %s, %d, %f, %f \n' % (user, str(users[user]['verified']), users[user]['verified_info'], users[user]['fwd_count'], users[user]['lat'], users[user]['lng'])
             f.write(line)
             log(NOTICE, line)
         except:
@@ -188,8 +216,8 @@ def export_posts(project, address, port, output="op.csv"):
     client = MongoClient(address, port)
     db = client[project]
     f = open(output, 'w')
-    f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
-    # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')
+    # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
+    f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')
     posts = db.posts.find()
     count = posts.count()
     i = 0
@@ -221,8 +249,8 @@ def export_posts(project, address, port, output="op.csv"):
         #         pass
         # =================IF HAVING TOPIC==============================
         try:
-            line = '%d, %s, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1], str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
-            # line = '%d, %s, %f, %f, %s, %d, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1],  str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info)
+            # line = '%d, %s, %f, %f, %s, %d, %s, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1], str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info, content)
+            line = '%d, %s, %f, %f, %s, %d, %s, %s, %s\n' % (post['mid'], post['keyword'], post['latlng'][0], post['latlng'][1], str(post['timestamp']), int(post['fwd_count']), username, verified, verified_info)
         except KeyError:
             pass
 

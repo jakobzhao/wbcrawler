@@ -12,19 +12,19 @@ import sys
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
-project = 'insurance'
+project = 'climate'
 
 
 def main():
-    f = open('%s/freq_shangbao.txt' % project, 'r')
-    f2 = open('%s/freq_shangbao2.txt' % project, 'w')
+    f = open('%s/freq_climate.txt' % project, 'r')
+    f2 = open('%s/freq_climate2.txt' % project, 'w')
     for line in f.readlines():
         # print line
         # print line
         a = line.split(u' ')
         w = a[0]
         print w.encode('gbk', 'ignore')
-        times = int(int(a[1]) / 5.0)
+        times = int(int(a[1]) / 40.0)
         print times
         # print a
         t = ''

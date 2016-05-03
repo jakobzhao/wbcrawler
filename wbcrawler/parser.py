@@ -207,6 +207,8 @@ def parse_item(post, keyword):
             "timestamp": t_china,
             "location": "",
             "latlng": [0, 0],
+            "accuracy": 0,
+            "flag": 0,
             "fwd_count": fwd_count,
             "cmt_count": 0,
             "like_count": like_count,
@@ -229,6 +231,10 @@ def parse_item(post, keyword):
             "follower_count": 0,
             "friend_count": 0,
             "latlng": [0, 0],
+            "accuracy": 0,
+            "flag": 0,
+            "flag-path": 0,
+            "flag-info": 0,
             "path": []
         }
     }
@@ -365,6 +371,8 @@ def parse_post(post, keyword=''):
             "latlng": latlng,
             "accuracy": accuracy,
             "flag": flag,
+            "flag-path": 0,
+            "flag-info": 0,
             "follower_count": 0,
             "friend_count": 0,
             "path": []
@@ -670,20 +678,20 @@ def parse_info(users, robot, db):
                 db.users.update({'userid': user['userid']}, {'$set': {
                     'gender': gender,
                     'birthday': birthday,
-                    'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'location-profile': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
                     'verified': verified,
                     'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
                     'latlng': latlng,
-                    'msg': 'parse_info has already conducted.'
+                    'flag-info': '1'
                 }})
             else:
                 db.users.update({'userid': user['userid']}, {'$set': {
                     'gender': gender,
                     'birthday': birthday,
-                    'location': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+                    'location-profile': loc.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
                     'verified': verified,
                     'verified_info': verified_info.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
-                    'msg': 'parse_info has already conducted.'
+                    'flag-info': '1'
                 }})
         except:
             pass
@@ -791,7 +799,7 @@ def parse_path(users, robot, db):
             path.append([0, 0, 0])
 
         # update user path and latlng
-        db.users.update({'userid': user['userid']}, {'$set': {'path': path}})
+        db.users.update({'userid': user['userid']}, {'$set': {'path': path, 'flag-path': 1}})
         # 更新user 的latlng,
         # 对于post的latlng的更新，我认为可以不着急？
         # try:

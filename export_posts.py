@@ -8,4 +8,4 @@
 # @organization: Harvard Kennedy School
 from wbcrawler.sna import export_posts
 
-export_posts('climate', 'localhost', 27017, 'climate-posts-with-content-20160222.csv')
+export_posts('climate', 'localhost', 27017, 'climate-posts-without-content-20160327.csv')

@@ -8,6 +8,7 @@
 sudo rm /home/bo/wbcrawler/crawler.log
 sudo rm /home/bo/wbcrawler/crawler-info.log
 sudo rm /home/bo/wbcrawler/crawler-path.log
+sudo rm /home/bo/wbcrawler/crawler-geo.log
 echo "the daily log has been deleted"
 cd /home/bo/wbcrawler
 sudo git checkout --force

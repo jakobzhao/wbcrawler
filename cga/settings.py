@@ -8,13 +8,15 @@
 # @organization: Harvard Kennedy School
 
 # all the hottest posts in the past hour.
+# 127.0.0.1
+# 140.247.116.151
 SETTINGS = {
     'project': 'cga',
     'pis': ['bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
-    'address': '127.0.0.1',
+    'address': '140.247.116.151',
     'port': 27017,
-    'robot_num': 4,
+    'robot_num': 1,
     'control_days': 9999,
     'keywords': [],
     'd_types': [{'1h': 9999}],

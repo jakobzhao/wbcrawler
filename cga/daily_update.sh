@@ -6,6 +6,8 @@
 # Bo Zhao
 # bo_zhao@hks.harvard.edu
 sudo rm /home/bo/wbcrawler/crawler.log
+sudo rm /home/bo/wbcrawler/crawler-info.log
+sudo rm /home/bo/wbcrawler/crawler-path.log
 echo "the daily log has been deleted"
 cd /home/bo/wbcrawler
 sudo git checkout --force

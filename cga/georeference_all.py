@@ -13,9 +13,6 @@ sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
 sys.path.append("/home/bo/wbcrawler")
 sys.path.append("/home/bo/wbcrawler/cga")
 
-sys.path.append("C:/Workspace/wbcrawler")
-sys.path.append("C:/Workspace/wbcrawler/cga")
-
 from wbcrawler.geo import estimate_location_by_path, geocode_locational_info, geocode_by_semantics, georeference
 from wbcrawler.log import *
 from pymongo import MongoClient

@@ -60,7 +60,8 @@ def register(settings):
     # firefox_profile.set_preference('permissions.default.image', 2)
     # firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
     from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-    binary = FirefoxBinary()
+    FIREFOX_PATH = "/usr/bin/firefox"
+    binary = FirefoxBinary(FIREFOX_PATH)
     browser = webdriver.Firefox(firefox_binary=binary)
 
     browser.set_window_size(960, 1050)

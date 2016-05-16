@@ -9,6 +9,7 @@
 
 import sys
 from pymongo import MongoClient, DESCENDING
+from settings import DB_USERNAME, DB_PSW
 from gensim.models import Word2Vec
 import networkx as nx
 from settings import TZCHINA
@@ -21,6 +22,7 @@ sys.setdefaultencoding('utf-8')
 def generate_network(project, address, port, output="wbcrawler.gexf", year=2015, month=10, date=20):
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     g = nx.DiGraph()
     # Now the network is generated in correct source-target relations.
     # source is the repliers, while the target is the original post.
@@ -155,6 +157,7 @@ def generate_sematic_network3(keyword, related_keywords, threshold=0.5, depth=10
 def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10, date=20):
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     # g = nx.DiGraph()
     # Now the network is generated in correct source-target relations.
     # source is the repliers, while the target is the original post.
@@ -215,6 +218,7 @@ def opinion_leaders(project, address, port, output="op.csv", year=2015, month=10
 def export_posts(project, address, port, output="op.csv"):
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     f = open(output, 'w')
     # f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified, verified_info, content \n')
     f.write('mid, topic, keyword, lat, lng, sentiment, pos, neg, timestamp, fwd_count, username, verified \n')

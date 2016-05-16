@@ -24,6 +24,7 @@ from math import log10
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+
 def parse_keyword(keyword, robot, db):
     # client = MongoClient(settings['address'], settings['port'])
     # db = client[settings['project']]
@@ -47,7 +48,6 @@ def parse_keyword(keyword, robot, db):
         url = 'http://s.weibo.com/weibo/' + keyword + '&page=' + str(i + 1)  # + '&nodup=1'
         log(NOTICE, 'processing the webpage %s...' % url.decode("utf-8"))
         rd = get_response_as_human(browser, url)
-        # soup =
         posts = BeautifulSoup(rd, 'html5lib').findAll('div', {'action-type': 'feed_list_item'})
         log(NOTICE, "%d posts in Page %d" % (len(posts), pages))
         for post in posts:
@@ -106,8 +106,6 @@ def parse_discovery(d_type, robot, db):
 
     # url_base = 'http://d.weibo.com/102803?feed_filter=102803_ctg1_9999_-_ctg1_9999&page='
     pages = 6
-
-    stop_flag = False
 
     # if soup.find('div', {'node-type': 'feed_list_page_morelist'}) is None:
     #     log(WARNING, "No pagelist element is detected, meaning the robot is not properly logged on, so forced to log out.")

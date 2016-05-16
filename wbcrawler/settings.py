@@ -20,6 +20,8 @@ STOP_WORDS = list(u' ：@:～~：:。·-—，,？?！!&*#[]；;：:、“”【
 # STOP_WORDS = list(u'：:～~：:。·-—，,？?！!&*#[]；;：:、“”【】[]《》<>|()（）…/↓→=_的了吗咯哦是呗交买卖说就有都也要这和能看到给个为上得把只用与着将做拿中事从打点')
 STOP_WORDS.extend([u'http', u'...'])
 # STOP_WORDS.extend([u'http', u'...', u'应该', u'一个', u'买', u'知道'])
+DB_USERNAME = "admin"
+DB_PSW = "ash123!@#"
 
 RE_STARTWITH = [u'//', u'收藏', u'轉發微博', u'轉發微博', u'转了', u'转发', u'转发微博', u'转发微薄', u'转发收藏', u'转吧', u'转来', u'转播', u'转走', u'转起', u'转转', u'转需', u'Repost', u'repost', u'mark']
 RE_EQUALTO = [u' //', u'马', u'转', u'马克', u'', u' ']

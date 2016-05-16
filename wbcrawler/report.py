@@ -11,7 +11,7 @@
 import socket
 import smtplib
 from pymongo import MongoClient
-
+from settings import DB_PSW, DB_USERNAME
 from wbcrawler.settings import EMAIL_PASSWORD
 from wbcrawler.log import *
 
@@ -47,7 +47,7 @@ def brief_report(settings):
     else:
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
-
+    client.localo[robot_table].authenticate(DB_USERNAME, DB_PSW)
     inused = client.local[robot_table].find({'inused': True}).count()
     total = client.local[robot_table].find().count()
 

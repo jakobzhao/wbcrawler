@@ -19,8 +19,9 @@ from pymongo import MongoClient, DESCENDING
 from utils import get_response_as_human
 from pyvirtualdisplay import Display
 from bs4 import BeautifulSoup
-from settings import TIMEOUT
+from settings import TIMEOUT, DB_USERNAME, DB_PSW
 from log import *
+
 
 def register(settings):
     if 'remote' not in settings.keys():
@@ -30,6 +31,7 @@ def register(settings):
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
 
+    client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
     # get a Robot from the database
     if client.local[robot_table].find({"inused": False}).count() == 0:
         occupied_msg = "All Robots are occupied, please try again later."
@@ -113,7 +115,6 @@ def register(settings):
 
     # Examing the validity of the account
     test_urls = ['http://s.weibo.com/weibo/love', 'http://weibo.com/1642592432/D0EwmhebV?type=repost']
-    passed = False
 
     rd = get_response_as_human(browser, test_urls[0], page_reload=True, waiting=3)
     soup = BeautifulSoup(rd, 'html5lib')
@@ -160,7 +161,7 @@ def unregister(robot):
     else:
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
-
+    client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
     client.local[robot_table].update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
 
@@ -178,6 +179,7 @@ def create_database(settings, fresh=False):
     # from the address level, I have to define the url by myself. seems we cannot reply on pyton
     # from the database level, what we can do? And how to do that?
     db = client[settings['project']]
+    db.authenticate(DB_USERNAME, DB_PSW)
     posts = db.posts
     users = db.users
 
@@ -202,6 +204,7 @@ def unlock_robots(settings):
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
 
+    client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
     client.local[robot_table].update_many({'inused': True}, {'$set': {'inused': False}})
     client[settings['project']].posts.delete_many({"mid": None})
     log(NOTICE, "All the robots have been unlocked.")

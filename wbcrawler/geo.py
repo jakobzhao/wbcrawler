@@ -46,8 +46,10 @@ def geocode(loc):
 # verified inforamtion, and/or other contextual information.
 def geocode_by_semantics(project, address, port):
     from pymongo import MongoClient
+    from settings import DB_PSW, DB_USERNAME
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'verified': True}
     users = db.users.find(search_json)
     count = db.users.find(search_json).count()
@@ -80,8 +82,10 @@ def geocode_by_semantics(project, address, port):
 
 def geocode_locational_info(project, address, port):
     from pymongo import MongoClient
+    from settings import DB_USERNAME, DB_PSW
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}], 'location': {'$ne': ''}}
 
     users = db.users.find(search_json)
@@ -134,8 +138,10 @@ def estimate_location_by_path(user):
 # Estimate where a post was sent out by the locational information of its author.
 def georeference(project, address, port):
     from pymongo import MongoClient
+    from settings import DB_USERNAME, DB_PSW
     client = MongoClient(address, port)
     db = client[project]
+    db.authenticate(DB_USERNAME, DB_PSW)
     search_json = {'$or': [{'latlng': [0, 0]}, {'latlng': [-1, -1]}]}
     posts = db.posts.find(search_json)
     count = db.posts.find(search_json).count()

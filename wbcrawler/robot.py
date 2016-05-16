@@ -52,9 +52,9 @@ def register(settings):
     # else:
     #     browser = webdriver.PhantomJS(executable_path=r'C:\Workspace\phantomjs\bin\phantomjs.exe')
 
-    if "Linux" in platform.platform():
-        display = Display(visible=0, size=(1024, 768))
-        display.start()
+
+    display = Display(visible=0, size=(1024, 768))
+    display.start()
 
     firefox_profile = webdriver.FirefoxProfile()
     firefox_profile.set_preference('permissions.default.image', 2)

@@ -31,7 +31,7 @@ def register(settings):
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
 
-    client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
+    client.admin.authenticate(DB_USERNAME, DB_PSW)
     # get a Robot from the database
     if client.local[robot_table].find({"inused": False}).count() == 0:
         occupied_msg = "All Robots are occupied, please try again later."
@@ -161,7 +161,7 @@ def unregister(robot):
     else:
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
-    client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
+    client.admin.authenticate(DB_USERNAME, DB_PSW)
     client.local[robot_table].update({'username': account[0]}, {'$set': {"inused": False}})
     log(NOTICE, 'ROBOT %d has successfully unregistered.' % account[2])
 
@@ -172,14 +172,10 @@ def unregister(robot):
 
 def create_database(settings, fresh=False):
     client = MongoClient(settings['address'], settings['port'])
-    # client.the_database.authenticate()
-    # client.the_database.authenticate('bo', 'f', source="C:\MongoDB\data")
-    # client = MongoClient('mongodb://bo:f@localhost:27017')
-    # db.add_user('bo','f')
     # from the address level, I have to define the url by myself. seems we cannot reply on pyton
     # from the database level, what we can do? And how to do that?
+    client.admin.authenticate(DB_USERNAME, DB_PSW)
     db = client[settings['project']]
-    db.authenticate(DB_USERNAME, DB_PSW)
     posts = db.posts
     users = db.users
 
@@ -203,7 +199,6 @@ def unlock_robots(settings):
     else:
         client = MongoClient(settings['remote']['address'], settings['remote']['port'])
         robot_table = settings['remote']['robot_table']
-
     client.local[robot_table].authenticate(DB_USERNAME, DB_PSW)
     client.local[robot_table].update_many({'inused': True}, {'$set': {'inused': False}})
     client[settings['project']].posts.delete_many({"mid": None})

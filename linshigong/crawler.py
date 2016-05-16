@@ -1,7 +1,7 @@
 # !/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Created on Oct 16, 2015
+# Created on May 16, 2016
 # @author:       Bo Zhao
 # @email:        bo_zhao@hks.harvard.edu
 # @website:      http://yenching.org
@@ -9,22 +9,17 @@
 
 import sys
 
-sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
-sys.path.append("/home/bo/Workspace/wbcrawler")
-sys.path.append("/home/bo/Workspace/wbcrawler/gov_remote")
-
-sys.path.append("C:/Workspace/wbcrawler")
-sys.path.append("C:/Workspace/wbcrawler/gov_remote")
+# sys.path.append("/home/bo/.local/lib/python2.7/site-packages")
+sys.path.append("/home/ubuntu/wbcrawler")
+sys.path.append("/home/ubuntu/wbcrawler/linshigong")
 
 from wbcrawler.parser import parse_keyword
 from wbcrawler.robot import register, unregister, create_database, unlock_robots
 from wbcrawler.log import *
 from settings import SETTINGS
 
-# First Round: 129 minutes
-# Second Round: 11 minutes
 # unlock the unreleased robots
-# unlock_robots(SETTINGS)
+unlock_robots(SETTINGS)
 
 # start to crawl
 start = datetime.datetime.now()

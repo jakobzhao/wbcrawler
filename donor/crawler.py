@@ -14,15 +14,9 @@ sys.path.append("/home/bo/Workspace/wbcrawler")
 sys.path.append("/home/bo/Workspace/wbcrawler/donor")
 
 from wbcrawler.parser import parse_keyword
-from wbcrawler.robot import register, unregister, create_database, unlock_robots
+from wbcrawler.robot import register, unregister, create_database
 from wbcrawler.log import *
 from settings import SETTINGS
-
-# First Round: 129 minutes
-# Second Round: 11 minutes
-# unlock the unreleased robots
-# unlock_robots(SETTINGS)
-# [2] 10/26 3:43 AM EST
 
 
 # start to crawl

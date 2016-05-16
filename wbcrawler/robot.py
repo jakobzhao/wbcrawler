@@ -22,9 +22,7 @@ from bs4 import BeautifulSoup
 from settings import TIMEOUT
 from log import *
 
-
 def register(settings):
-    TIMEOUT = 20
     if 'remote' not in settings.keys():
         client = MongoClient(settings['address'], settings['port'])
         robot_table = settings['robot_table']
@@ -47,6 +45,11 @@ def register(settings):
     password = account[1]
     id = account[2]
 
+    # if "Linux" in platform.platform():
+    #     browser = webdriver.PhantomJS(executable_path=r'/home/ubuntu/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
+    # else:
+    #     browser = webdriver.PhantomJS(executable_path=r'C:\Workspace\phantomjs\bin\phantomjs.exe')
+
     if "Linux" in platform.platform():
         display = Display(visible=0, size=(1024, 768))
         display.start()
@@ -54,11 +57,7 @@ def register(settings):
     firefox_profile = webdriver.FirefoxProfile()
     firefox_profile.set_preference('permissions.default.image', 2)
     firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-
     browser = webdriver.Firefox(firefox_profile=firefox_profile)
-
-    # browser = webdriver.Firefox()
-    # browser = webdriver.PhantomJS(executable_path=r'C:\Workspace\phantomjs\bin\phantomjs.exe')
 
     browser.set_window_size(960, 1050)
     browser.set_window_position(0, 0)

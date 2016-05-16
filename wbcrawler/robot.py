@@ -56,10 +56,10 @@ def register(settings):
     display = Display(visible=0, size=(1024, 768))
     display.start()
 
-    firefox_profile = webdriver.FirefoxProfile()
-    firefox_profile.set_preference('permissions.default.image', 2)
-    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    browser = webdriver.Firefox(firefox_profile=firefox_profile)
+    # firefox_profile = webdriver.FirefoxProfile()
+    # firefox_profile.set_preference('permissions.default.image', 2)
+    # firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    browser = webdriver.Firefox()
 
     browser.set_window_size(960, 1050)
     browser.set_window_position(0, 0)

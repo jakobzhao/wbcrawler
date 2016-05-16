@@ -15,7 +15,7 @@ SETTINGS = {
     'port': 27017,
     'robot_num': 5,
     'keywords': ['捐赠 元', '慈善'],
-    'control_days': 19999,
-    'replies_control_days': 19999,
+    'control_days': 60,
+    'replies_control_days': 60,
     'min_fwd_times': 2
 }

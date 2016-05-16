@@ -52,20 +52,21 @@ def register(settings):
     # else:
     #     browser = webdriver.PhantomJS(executable_path=r'C:\Workspace\phantomjs\bin\phantomjs.exe')
 
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
 
-    display = Display(visible=0, size=(1024, 768))
-    display.start()
-
-    # firefox_profile = webdriver.FirefoxProfile()
-    # firefox_profile.set_preference('permissions.default.image', 2)
-    # firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
-    from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
-    FIREFOX_PATH = "/usr/bin/firefox"
-    binary = FirefoxBinary(FIREFOX_PATH)
-    browser = webdriver.Firefox(firefox_binary=binary)
-
-    browser.set_window_size(960, 1050)
-    browser.set_window_position(0, 0)
+    if "Linux" in platform.platform():
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
+        from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+        FIREFOX_PATH = "/usr/bin/firefox"
+        binary = FirefoxBinary(FIREFOX_PATH)
+        browser = webdriver.Firefox(firefox_binary=binary, firefox_profile=firefox_profile)
+        browser.set_window_size(960, 1050)
+        browser.set_window_position(0, 0)
+    else:
+        browser = webdriver.Firefox(firefox_profile=firefox_profile)
 
     browser.set_page_load_timeout(TIMEOUT)
     browser.set_script_timeout(TIMEOUT)

@@ -8,14 +8,14 @@
 # @organization: Harvard Kennedy School
 
 SETTINGS = {
-    'project': 'linshigong',
-    'pis': ['bo_zhao@hks.harvard.edu', 'pkuhuirong@gmail.com'],
+    'project': 'philanthropy',
+    'pis': ['bo_zhao@hks.harvard.edu'],
     'robot_table': 'accounts',
     'address': '127.0.0.1',
     'port': 27017,
-    'robot_num': 5,
-    'keywords': ['临时工', '编外人员'],
-    'control_days': 60,
-    'replies_control_days': 60,
+    'robot_num': 3,
+    'keywords': ['捐赠 元', '慈善'],
+    'control_days': 19999,
+    'replies_control_days': 19999,
     'min_fwd_times': 2
 }

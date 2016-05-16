@@ -25,7 +25,6 @@ def brief_report(settings):
     project = settings['project']
     address = settings['address']
     port = settings['port']
-    robot_table = settings['robot_table']
 
     sender = 'snsgis@gmail.com'
     username = 'snsgis@gmail.com'

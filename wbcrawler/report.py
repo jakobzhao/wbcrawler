@@ -51,7 +51,8 @@ def brief_report(settings):
     total = client.local[robot_table].find().count()
 
     # For post information
-    client = MongoClient(address, port)
+    # client = MongoClient(address, port)
+    # client.admin.authenticate(DB_USERNAME, DB_PSW)
     db = client[project]
 
     total_posts = db.posts.find().count()

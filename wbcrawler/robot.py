@@ -62,7 +62,7 @@ def register(settings):
         from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
         FIREFOX_PATH = "/usr/bin/firefox"
         binary = FirefoxBinary(FIREFOX_PATH)
-        browser = webdriver.Firefox(firefox_binary=binary, firefox_profile=firefox_profile)
+        browser = webdriver.Firefox(firefox_binary=binary)
         browser.set_window_size(960, 1050)
         browser.set_window_position(0, 0)
     else:

@@ -201,7 +201,7 @@ def parse_item(post, keyword):
         "reply": {
             "keyword": keyword,
             "mid": mid,
-            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore').strip(),
             "timestamp": t_china,
             "location": "",
             "latlng": [0, 0],
@@ -340,7 +340,7 @@ def parse_post(post, keyword=''):
         "post": {
             "mid": mid,
             "keyword": keyword,
-            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore').strip(),
             "timestamp": t_china,
             "fwd_count": fwd_count,
             "cmt_count": cmt_count,

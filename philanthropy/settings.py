@@ -24,7 +24,7 @@ SETTINGS = {
         '捐赠 元 邱~江~尹~薛~闫~段~雷~侯~龙~史~陶~黎~贺~顾~毛~郝~龚~邵',
         '捐赠 元 万~钱~严~覃~武~戴~莫~孔~向~汤~傅~阎~殷~常~赖~康~施~牛',
         '捐赠 元 洪'],
-    'control_days': 60,
-    'replies_control_days': 60,
+    'control_days': 180,
+    'replies_control_days': 180,
     'min_fwd_times': 2
 }

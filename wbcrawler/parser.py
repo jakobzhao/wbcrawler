@@ -340,7 +340,7 @@ def parse_post(post, keyword=''):
         "post": {
             "mid": mid,
             "keyword": keyword,
-            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore').strip(),
+            "content": content.encode('utf-8', 'ignore').decode('utf-8', 'ignore').replace(" ", "").replace("\t", "").strip(),
             "timestamp": t_china,
             "fwd_count": fwd_count,
             "cmt_count": cmt_count,
@@ -360,7 +360,7 @@ def parse_post(post, keyword=''):
         },
         "user": {
             "userid": userid,
-            "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore'),
+            "username": user_name.encode('utf-8', 'ignore').decode('utf-8', 'ignore').replace(" ", "").replace("\t", "").strip(),
             "verified": user_verified,
             "verified_info": '',
             "gender": "",

@@ -16,14 +16,17 @@ project = 'climate'
 
 
 def main():
-    f = open('%s/freq_climate.txt' % project, 'r')
-    f2 = open('%s/freq_climate2.txt' % project, 'w')
+    # f = open('%s/freq_climate.txt' % project, 'r')
+    # f2 = open('%s/freq_climate2.txt' % project, 'w')
+    f = open('all.txt', 'r')
+    f2 = open('all2.txt', 'w')
     for line in f.readlines():
         # print line
         # print line
-        a = line.split(u' ')
+        a = line.split(' ')
         w = a[0]
-        print w.encode('gbk', 'ignore')
+        # print w.encode('gbk', 'ignore')
+        print w
         times = int(int(a[1]) / 40.0)
         print times
         # print a
